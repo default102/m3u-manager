@@ -15,6 +15,7 @@ export interface Playlist {
   url: string | null;
   groupOrder: string | null;
   hiddenGroups: string | null;
+  hiddenChannels: string | null;
   channels: Channel[];
   createdAt: string;
   updatedAt: string;
