@@ -1,0 +1,394 @@
+'use client';
+
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { Channel, Playlist } from '@/types';
+import { arrayMove } from '@dnd-kit/sortable';
+
+interface PlaylistContextType {
+  // State
+  playlistId: number;
+  channels: Channel[];
+  groupOrder: string[];
+  hiddenGroups: string[];
+  selectedGroup: string;
+  search: string;
+  selectedIds: Set<number>;
+  editingChannel: Channel | null;
+  isSortingGroups: boolean;
+  
+  // Derived State
+  allExistingGroupNames: string[];
+  sortableGroups: string[];
+  filteredChannels: Channel[];
+  stats: {
+    totalChannels: number;
+    totalGroups: number;
+    hiddenGroupsCount: number;
+    hiddenChannelsCount: number;
+  };
+
+  // Actions
+  setSearch: (val: string) => void;
+  setSelectedGroup: (val: string) => void;
+  setIsSortingGroups: (val: boolean) => void;
+  setEditingChannel: (channel: Channel | null) => void;
+  
+  // Handlers
+  handleCreateGroup: () => void;
+  handleReorderGroups: (activeId: string, overId: string) => void;
+  handleReorderChannels: (activeId: number, overId: number) => void;
+  handleToggleSelect: (id: number) => void;
+  handleSelectAll: () => void;
+  handleDeselectAll: () => void;
+  
+  // CRUD & Management
+  handleUpdateChannel: (updated: Channel) => Promise<void>;
+  handleSingleDelete: (id: number) => void;
+  handleBatchDelete: () => void;
+  handleBatchMove: (targetGroup: string) => Promise<void>;
+  handleRenameGroup: (oldName: string) => void;
+  handleDeleteGroup: (groupName: string) => void;
+  handleToggleHideGroup: (groupName: string) => void;
+  
+  // Confirmation Modal
+  confirmModal: {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    isDangerous: boolean;
+    onConfirm: () => void;
+  };
+  closeConfirmModal: () => void;
+}
+
+const PlaylistContext = createContext<PlaylistContextType | undefined>(undefined);
+
+export function PlaylistProvider({ 
+  children, 
+  initialPlaylist 
+}: { 
+  children: React.ReactNode; 
+  initialPlaylist: Playlist 
+}) {
+  const [channels, setChannels] = useState<Channel[]>(initialPlaylist.channels);
+  const [groupOrder, setGroupOrder] = useState<string[]>(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
+  const [hiddenGroups, setHiddenGroups] = useState<string[]>(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
+  const [selectedGroup, setSelectedGroup] = useState<string>('全部');
+  const [search, setSearch] = useState('');
+  const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
+  const [isSortingGroups, setIsSortingGroups] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    isDangerous: false
+  });
+
+  const closeConfirmModal = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
+
+  // --- Derived State ---
+
+  const allExistingGroupNames = useMemo(() => {
+    const names = new Set(channels.map(c => c.groupTitle || '未分类'));
+    return Array.from(names).filter(n => n !== '未分类').sort();
+  }, [channels]);
+
+  const sortableGroups = useMemo(() => {
+    const seen = new Set<string>();
+    const orderInFile: string[] = [];
+    
+    channels.forEach(c => {
+        const title = c.groupTitle || '未分类';
+        if (!seen.has(title)) {
+            seen.add(title);
+            orderInFile.push(title);
+        }
+    });
+
+    if (groupOrder.length > 0) {
+        const ordered = groupOrder.filter(name => seen.has(name));
+        const remaining = orderInFile.filter(name => !ordered.includes(name));
+        return [...ordered, ...remaining];
+    }
+    return orderInFile;
+  }, [channels, groupOrder]);
+
+  const stats = useMemo(() => {
+    const totalChannels = channels.length;
+    const totalGroups = sortableGroups.length;
+    const hiddenGroupsCount = hiddenGroups.length;
+    
+    const hiddenChannelsCount = channels.filter(c => 
+      hiddenGroups.includes(c.groupTitle || '未分类')
+    ).length;
+
+    return { totalChannels, totalGroups, hiddenGroupsCount, hiddenChannelsCount };
+  }, [channels, sortableGroups, hiddenGroups]);
+
+  const filteredChannels = useMemo(() => {
+    let res = [...channels];
+    if (selectedGroup !== '全部') {
+       res = res.filter(c => (c.groupTitle || '未分类') === selectedGroup);
+    }
+    if (search) {
+       res = res.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+    }
+    return res;
+  }, [channels, selectedGroup, search]);
+
+  // --- Actions ---
+
+  const handleCreateGroup = () => {
+    const name = prompt("输入新分组名称:");
+    if (!name) return;
+    
+    fetch('/api/playlist/dummy-channel', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ 
+            name: '新频道', 
+            url: 'http://', 
+            groupTitle: name, 
+            playlistId: initialPlaylist.id, 
+            order: channels.length 
+        }) 
+    })
+    .then(res => res.json())
+    .then(data => { 
+        setChannels(prev => [...prev, data]); 
+        setSelectedGroup(name); 
+    });
+  };
+
+  const handleReorderGroups = (activeId: string, overId: string) => {
+    const oldIdx = sortableGroups.indexOf(activeId);
+    const newIdx = sortableGroups.indexOf(overId);
+    if (oldIdx !== -1 && newIdx !== -1) {
+        const newOrder = arrayMove(sortableGroups, oldIdx, newIdx);
+        setGroupOrder(newOrder);
+        fetch(`/api/playlist/${initialPlaylist.id}/group-order`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ groupOrder: newOrder })
+        });
+    }
+  };
+
+  const handleReorderChannels = (activeId: number, overId: number) => {
+    const oldIndex = channels.findIndex(c => c.id === activeId);
+    const newIndex = channels.findIndex(c => c.id === overId);
+    
+    if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(channels, oldIndex, newIndex);
+        setChannels(reordered);
+        fetch(`/api/playlist/${initialPlaylist.id}/sort`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelIds: reordered.map(c => c.id) })
+        });
+    }
+  };
+
+  const handleToggleSelect = (id: number) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedIds(newSet);
+  };
+
+  const handleSelectAll = () => setSelectedIds(new Set(filteredChannels.map(c => c.id)));
+  const handleDeselectAll = () => setSelectedIds(new Set());
+
+  const handleUpdateChannel = async (updated: Channel) => {
+    const res = await fetch(`/api/channel/${updated.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+    });
+    if (res.ok) {
+        setChannels(prev => prev.map(c => c.id === updated.id ? updated : c));
+        setEditingChannel(null);
+    }
+  };
+
+  const handleSingleDelete = (id: number) => {
+    setConfirmModal({
+        isOpen: true,
+        title: '确认删除频道',
+        message: '您确定要删除这个频道吗？',
+        isDangerous: true,
+        onConfirm: async () => {
+            closeConfirmModal();
+            setChannels(prev => prev.filter(c => c.id !== id));
+            await fetch(`/api/channel/${id}`, { method: 'DELETE' });
+        }
+    });
+  };
+
+  const handleBatchDelete = () => {
+    setConfirmModal({
+        isOpen: true,
+        title: '确认批量删除',
+        message: `您确定要删除选中的 ${selectedIds.size} 个频道吗？此操作不可撤销。`,
+        isDangerous: true,
+        onConfirm: async () => {
+            closeConfirmModal();
+            const idsToDelete = Array.from(selectedIds);
+            setChannels(prev => prev.filter(c => !selectedIds.has(c.id)));
+            setSelectedIds(new Set());
+            await fetch('/api/channel/batch', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', ids: idsToDelete })
+            });
+        }
+    });
+  };
+
+  const handleBatchMove = async (targetGroup: string) => {
+    const idsToMove = Array.from(selectedIds);
+    setChannels(prev => prev.map(c => selectedIds.has(c.id) ? { ...c, groupTitle: targetGroup } : c));
+    setSelectedIds(new Set());
+    await fetch('/api/channel/batch', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'move', ids: idsToMove, data: { groupTitle: targetGroup } })
+    });
+  };
+
+  const handleDeleteGroup = (groupName: string) => {
+    setConfirmModal({
+        isOpen: true,
+        title: '确认删除分组',
+        message: `您确定要删除分组 "${groupName}" 吗？该分组下的所有频道将被移动到 "未分类"。`,
+        isDangerous: true,
+        onConfirm: async () => {
+            closeConfirmModal();
+            
+            const channelIdsToMove = channels
+              .filter(c => (c.groupTitle || '未分类') === groupName)
+              .map(c => c.id);
+
+            if (channelIdsToMove.length > 0) {
+                setChannels(prev => prev.map(c => 
+                  channelIdsToMove.includes(c.id) ? { ...c, groupTitle: '' } : c
+                ));
+
+                await fetch('/api/channel/batch', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      action: 'move', 
+                      ids: channelIdsToMove, 
+                      data: { groupTitle: '' } 
+                    })
+                });
+            }
+
+            const newOrder = groupOrder.filter(g => g !== groupName);
+            setGroupOrder(newOrder);
+            
+            if (selectedGroup === groupName) {
+                setSelectedGroup('全部');
+            }
+        }
+    });
+  };
+
+  const handleRenameGroup = (oldName: string) => {
+    const newName = prompt(`将分组 "${oldName}" 重命名为:`, oldName);
+    if (!newName || newName === oldName) return;
+
+    const channelIdsToMove = channels
+      .filter(c => (c.groupTitle || '未分类') === oldName)
+      .map(c => c.id);
+
+    if (channelIdsToMove.length > 0) {
+        setChannels(prev => prev.map(c => 
+          channelIdsToMove.includes(c.id) ? { ...c, groupTitle: newName } : c
+        ));
+
+        fetch('/api/channel/batch', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              action: 'move', 
+              ids: channelIdsToMove, 
+              data: { groupTitle: newName } 
+            })
+        });
+    }
+
+    const newOrder = groupOrder.map(g => g === oldName ? newName : g);
+    setGroupOrder(newOrder);
+    
+    if (selectedGroup === oldName) {
+        setSelectedGroup(newName);
+    }
+  };
+
+  const handleToggleHideGroup = (groupName: string) => {
+    if (groupName === '全部') return;
+    const newHidden = hiddenGroups.includes(groupName)
+      ? hiddenGroups.filter(g => g !== groupName)
+      : [...hiddenGroups, groupName];
+    
+    setHiddenGroups(newHidden);
+    fetch(`/api/playlist/${initialPlaylist.id}/hidden-groups`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hiddenGroups: newHidden })
+    });
+  };
+
+  const value = {
+    playlistId: initialPlaylist.id,
+    channels,
+    groupOrder,
+    hiddenGroups,
+    selectedGroup,
+    search,
+    selectedIds,
+    editingChannel,
+    isSortingGroups,
+    
+    allExistingGroupNames,
+    sortableGroups,
+    filteredChannels,
+    stats,
+
+    setSearch,
+    setSelectedGroup,
+    setIsSortingGroups,
+    setEditingChannel,
+    
+    handleCreateGroup,
+    handleReorderGroups,
+    handleReorderChannels,
+    handleToggleSelect,
+    handleSelectAll,
+    handleDeselectAll,
+    
+    handleUpdateChannel,
+    handleSingleDelete,
+    handleBatchDelete,
+    handleBatchMove,
+    handleRenameGroup,
+    handleDeleteGroup,
+    handleToggleHideGroup,
+    
+    confirmModal,
+    closeConfirmModal
+  };
+
+  return <PlaylistContext.Provider value={value}>{children}</PlaylistContext.Provider>;
+}
+
+export function usePlaylist() {
+  const context = useContext(PlaylistContext);
+  if (!context) throw new Error('usePlaylist must be used within a PlaylistProvider');
+  return context;
+}
