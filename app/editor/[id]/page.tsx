@@ -53,7 +53,7 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
        
        {/* 编辑器主区域 */}
        <main className="flex-1 overflow-hidden relative">
-          <EditorClient playlist={playlist} />
+          <EditorClient playlist={JSON.parse(JSON.stringify(playlist))} />
        </main>
     </div>
   );
