@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trash2, Plus, Database, RefreshCw, ArrowLeft, Download, Clock, HardDrive } from 'lucide-react';
+import { Trash2, Plus, Database, RefreshCw, ArrowLeft, Clock, HardDrive } from 'lucide-react';
 
 interface Backup {
   name: string;
@@ -14,8 +14,10 @@ export default function BackupsPage() {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     fetchBackups();
   }, []);
 
@@ -24,10 +26,18 @@ export default function BackupsPage() {
     fetch('/api/backup')
       .then(res => res.json())
       .then(data => {
-        setBackups(data);
+        if (Array.isArray(data)) {
+          setBackups(data);
+        } else {
+          console.error('Expected array of backups, got:', data);
+          setBackups([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error('Failed to fetch backups:', err);
+        setLoading(false);
+      });
   };
 
   const handleCreateBackup = async () => {
@@ -51,8 +61,6 @@ export default function BackupsPage() {
       const res = await fetch(`/api/backup/${filename}/restore`, { method: 'POST' });
       if (!res.ok) throw new Error('Restore failed');
       alert('恢复成功！');
-      // Maybe reload page or fetch playlists to ensure state is fresh if this was on main page.
-      // Since we are on backups page, just processing off.
     } catch (e) {
       alert('恢复失败');
     } finally {
@@ -64,15 +72,16 @@ export default function BackupsPage() {
     if (!confirm(`确定要删除备份 ${filename} 吗？`)) return;
     
     try {
-      await fetch(`/api/backup/${filename}`, { method: 'DELETE' });
-      setBackups(backups.filter(b => b.name !== filename));
+      const res = await fetch(`/api/backup/${filename}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      setBackups(prev => prev.filter(b => b.name !== filename));
     } catch (e) {
       alert('删除失败');
     }
   };
 
   const formatSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
+    if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -80,8 +89,23 @@ export default function BackupsPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString();
+    if (!dateStr) return '未知时间';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleString();
+    } catch (e) {
+      return dateStr;
+    }
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900">
@@ -129,7 +153,7 @@ export default function BackupsPage() {
                              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                                 <Database size={20} />
                              </div>
-                             <div>
+                             <div className="min-w-0">
                                 <h3 className="font-bold text-slate-800 break-all">{backup.name}</h3>
                                 <div className="flex flex-wrap gap-4 mt-1 text-xs text-slate-500">
                                    <span className="flex items-center gap-1">
@@ -150,8 +174,6 @@ export default function BackupsPage() {
                              >
                                 <RefreshCw size={16} /> 恢复
                              </button>
-                             {/* Optional: Download Backup */}
-                             {/* <a href={`/api/backup/${backup.name}/download`} className="..." ...> ... </a> */}
                              
                              <button 
                                 onClick={() => handleDelete(backup.name)}
