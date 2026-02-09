@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ListFilter, Plus, Settings2, EyeOff } from 'lucide-react';
+import { Search, ListFilter, Plus, Settings2, EyeOff, Edit2, Trash2, Eye } from 'lucide-react';
 import {
   DndContext, 
   closestCenter,
@@ -245,6 +245,7 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
   };
 
   const handleToggleHideGroup = (groupName: string) => {
+      if (groupName === '全部') return;
       const newHidden = hiddenGroups.includes(groupName)
         ? hiddenGroups.filter(g => g !== groupName)
         : [...hiddenGroups, groupName];
@@ -282,9 +283,11 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
 
   if (!mounted) return <div className="h-full flex items-center justify-center text-slate-400">正在加载编辑器...</div>;
 
+  const isCurrentGroupHidden = hiddenGroups.includes(selectedGroup);
+
   return (
     <div className="flex h-full text-slate-900 overflow-hidden bg-white relative">
-      <div className={`${showGroups ? 'w-64' : 'w-0'} bg-slate-50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10 text-black`}>
+      <div className={`${showGroups ? (isSortingGroups ? 'w-80' : 'w-64') : 'w-0'} bg-slate-50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10 text-black`}>
          <div className="p-4 border-b bg-white">
             <div className="flex items-center justify-between mb-3 text-black">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest text-black">节目分组</h3>
@@ -309,8 +312,8 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
                                 setSelectedGroup(name); 
                             });
                         }
-                    }} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600"><Plus size={16}/></button>
-                    <button onClick={() => setIsSortingGroups(!isSortingGroups)} className={`p-1.5 rounded-lg transition-all ${isSortingGroups ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'hover:bg-slate-100 text-slate-400'}`}><Settings2 size={16}/></button>
+                    }} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600" title="新建分组"><Plus size={16}/></button>
+                    <button onClick={() => setIsSortingGroups(!isSortingGroups)} className={`p-1.5 rounded-lg transition-all ${isSortingGroups ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'hover:bg-slate-100 text-slate-400'}`} title="管理分组"><Settings2 size={16}/></button>
                 </div>
             </div>
             <div className="relative text-black">
@@ -370,20 +373,56 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
 
       <div className="flex-1 flex flex-col overflow-hidden">
          <div className="p-4 border-b flex justify-between items-center bg-white z-10 text-black">
-             <div className="flex items-center gap-3">
-               <button onClick={() => setShowGroups(!showGroups)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><ListFilter size={18} /></button>
-               <h2 className="font-extrabold text-slate-800 text-sm md:text-base flex items-center gap-2">
-                 {selectedGroup}
-                 <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-xs">{filteredChannels.length}</span>
-               </h2>
+             <div className="flex items-center gap-3 overflow-hidden">
+               <button onClick={() => setShowGroups(!showGroups)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 shrink-0"><ListFilter size={18} /></button>
+               
+               <div className="flex items-center gap-2 min-w-0">
+                  <h2 className="font-extrabold text-slate-800 text-sm md:text-base truncate">
+                    {selectedGroup}
+                  </h2>
+                  <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-[10px] md:text-xs shrink-0">{filteredChannels.length}</span>
+                  
+                  {/* Quick Action Shortcuts for Selected Group */}
+                  {selectedGroup !== '全部' && (
+                    <div className="flex items-center gap-1 ml-2 border-l border-slate-100 pl-2 shrink-0">
+                       <button 
+                         onClick={() => handleToggleHideGroup(selectedGroup)}
+                         className={`p-1.5 rounded-md transition-all ${isCurrentGroupHidden ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                         title={isCurrentGroupHidden ? "显示此分类" : "在订阅中隐藏此分类"}
+                       >
+                         {isCurrentGroupHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                       </button>
+                       
+                       {selectedGroup !== '未分类' && (
+                         <>
+                           <button 
+                             onClick={() => handleRenameGroup(selectedGroup)}
+                             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                             title="重命名此分类"
+                           >
+                             <Edit2 size={16} />
+                           </button>
+                           <button 
+                             onClick={() => handleDeleteGroup(selectedGroup)}
+                             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+                             title="删除此分类"
+                           >
+                             <Trash2 size={16} />
+                           </button>
+                         </>
+                       )}
+                    </div>
+                  )}
+               </div>
              </div>
-             <button onClick={() => selectedIds.size === filteredChannels.length ? setSelectedIds(new Set()) : setSelectedIds(new Set(filteredChannels.map(c => c.id)))} className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg">
+             
+             <button onClick={() => selectedIds.size === filteredChannels.length ? setSelectedIds(new Set()) : setSelectedIds(new Set(filteredChannels.map(c => c.id)))} className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg shrink-0 ml-2">
                  {selectedIds.size === filteredChannels.length && filteredChannels.length > 0 ? '取消全选' : '全选'}
              </button>
          </div>
 
          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 custom-scrollbar pb-24">
-            <div className="max-w-3xl auto">
+            <div className="max-w-3xl mx-auto">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={filteredChannels.map(c => `channel-${c.id}`)} strategy={verticalListSortingStrategy} disabled={selectedGroup === '全部' || isSortingGroups}>
                   {filteredChannels.map(channel => (
