@@ -32,7 +32,7 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
        <span className={`truncate flex-1 ${isHidden ? 'line-through opacity-60' : ''}`}>{label}</span>
        <span className="text-[10px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">{count}</span>
        
-       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+       <div className="flex items-center gap-1 transition-all">
          {onToggleHide && (
            <button 
              onClick={(e) => {
