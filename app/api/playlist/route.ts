@@ -29,14 +29,17 @@ export async function POST(request: Request) {
         url: url || null,
         channels: {
           create: parsed.items.map((item: any, index: number) => {
-            const tvgName = item.tvg?.name || '';
+            const name = item.name?.trim() || '';
+            const tvgName = item.tvg?.name?.trim() || '';
+            const tvgId = item.tvg?.id?.trim() || '';
+            
             return {
-              name: item.name,
-              url: item.url,
-              tvgId: item.tvg?.id || '',
-              tvgName: tvgName === item.name ? '' : tvgName, // Don't store if identical to name
-              tvgLogo: item.tvg?.logo || '',
-              groupTitle: item.group?.title || '',
+              name: name,
+              url: item.url?.trim() || '',
+              tvgId: tvgId === name ? '' : tvgId,
+              tvgName: tvgName === name ? '' : tvgName,
+              tvgLogo: item.tvg?.logo?.trim() || '',
+              groupTitle: item.group?.title?.trim() || '',
               duration: -1,
               order: index
             };
