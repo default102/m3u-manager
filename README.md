@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# M3U 订阅管理器 (M3U Manager)
 
-## Getting Started
+一个轻量级、美观且响应式的 M3U 节目列表管理工具。支持分组编辑、拖拽排序、批量管理及自动订阅导出。
 
-First, run the development server:
+## 🌟 核心功能
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **多端兼容**：适配手机、平板和电脑浏览器。
+- **灵活导入**：支持通过远程 URL 或本地 `.m3u` 文件导入/更新列表。
+- **分组管理**：自动识别分组顺序，支持创建新分组及分组间的拖拽排序。
+- **批量操作**：支持勾选多个频道进行批量移动分组或一键删除。
+- **订阅导出**：为每个列表生成固定的 M3U 链接，支持播放器直接订阅。
+- **覆盖更新**：支持重新导入文件以覆盖现有内容，同时保留列表 ID。
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 快速开始
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Docker 部署 (推荐)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+这是最简单且推荐的部署方式，支持数据持久化。
 
-## Learn More
+1. **使用 Docker Compose 一键启动**：
+   在项目根目录下运行：
+   ```bash
+   docker-compose up -d
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **手动运行 Docker 容器**：
+   如果您不想使用 Compose，可以使用以下命令：
+   ```bash
+   # 构建镜像
+   docker build -t m3u-manager .
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   # 运行容器 (挂载本地 data 目录以保存数据库)
+   docker run -d \
+     -p 3000:3000 \
+     -v $(pwd)/data:/app/data \
+     --name m3u-app \
+     m3u-manager
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> **注意**：挂载 `-v $(pwd)/data:/app/data` 非常重要，否则容器重启后您的数据将会丢失。
 
-## Deploy on Vercel
+### 本地开发
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **安装依赖**：
+   ```bash
+   npm install
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **初始化数据库**：
+   ```bash
+   npx prisma db push
+   ```
+
+3. **启动服务**：
+   ```bash
+   npm run dev
+   ```
+   访问 [http://localhost:3000](http://localhost:3000)。
+
+## 🛡️ 安全建议
+
+本工具设计初衷为私有环境使用，**未内置登录鉴权**。若部署在公网，强烈建议：
+1. 使用 Nginx/Caddy 配置 **Basic Auth**。
+2. 仅在局域网或通过 VPN (如 Tailscale) 访问。
+
+## 📝 订阅地址格式
+
+导出链接：`http://<您的服务器IP>:3000/api/export/<列表ID>`
+
+## 开源协议
+
+MIT

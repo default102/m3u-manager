@@ -1,0 +1,75 @@
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const playlistId = parseInt(id);
+
+  const playlist = await prisma.playlist.findUnique({
+    where: { id: playlistId },
+    include: {
+      channels: {
+        orderBy: { order: 'asc' }
+      }
+    }
+  });
+
+  if (!playlist) {
+    return new NextResponse('Playlist not found', { status: 404 });
+  }
+
+  // Sort channels by groupOrder first, then by channel order
+  let sortedChannels = [...playlist.channels];
+  if (playlist.groupOrder) {
+    const groupOrder = JSON.parse(playlist.groupOrder) as string[];
+    sortedChannels.sort((a, b) => {
+      const groupA = a.groupTitle || '未分类';
+      const groupB = b.groupTitle || '未分类';
+      const idxA = groupOrder.indexOf(groupA);
+      const idxB = groupOrder.indexOf(groupB);
+      
+      // If both groups have an explicit order
+      if (idxA !== -1 && idxB !== -1) {
+        if (idxA !== idxB) return idxA - idxB;
+        return a.order - b.order;
+      }
+      // Groups not in groupOrder go to the end
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      
+      // If same group or both not in groupOrder, fallback to channel order
+      if (groupA !== groupB) return groupA.localeCompare(groupB);
+      return a.order - b.order;
+    });
+  }
+
+  let m3u = '#EXTM3U\n';
+  
+  if (playlist.url) {
+    m3u += `#EXT-X-SESSION-DATA:DATA-ID="com.m3u-manager.source",VALUE="${playlist.url}"\n`;
+  }
+
+  for (const channel of sortedChannels) {
+    const attributes = [];
+    if (channel.tvgId) attributes.push(`tvg-id="${channel.tvgId}"`);
+    if (channel.tvgName) attributes.push(`tvg-name="${channel.tvgName}"`);
+    if (channel.tvgLogo) attributes.push(`tvg-logo="${channel.tvgLogo}"`);
+    if (channel.groupTitle) attributes.push(`group-title="${channel.groupTitle}"`);
+    
+    const attrString = attributes.length > 0 ? ' ' + attributes.join(' ') : '';
+    const duration = channel.duration || -1;
+    
+    m3u += `#EXTINF:${duration}${attrString},${channel.name}\n`;
+    m3u += `${channel.url}\n`;
+  }
+
+  return new NextResponse(m3u, {
+    headers: {
+      'Content-Type': 'application/x-mpegurl',
+      'Content-Disposition': `attachment; filename="${playlist.name.replace(/[^a-z0-9]/gi, '_')}.m3u"`
+    }
+  });
+}
