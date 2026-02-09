@@ -33,7 +33,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# 复制 Prisma 相关 (standalone 模式默认不包含 prisma CLI)
+# 复制完整的 Prisma CLI 和引擎 (standalone 模式默认剔除了这些)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
@@ -47,5 +47,5 @@ ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 ENV DATABASE_URL "file:/app/data/db.sqlite"
 
-# 使用本地 prisma 路径，避免 npx 重新下载并使用错误的 v7 版本
-CMD ./node_modules/.bin/prisma db push && node server.js
+# 直接使用 node 运行 prisma 脚本，绕过可能失效的 .bin 软链接
+CMD node node_modules/prisma/build/index.js db push && node server.js
