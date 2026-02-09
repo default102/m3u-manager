@@ -1,12 +1,12 @@
 'use client';
 
 import { usePlaylist } from './PlaylistContext';
-import { Search, Plus, Settings2, EyeOff } from 'lucide-react';
+import { Search, Plus, Settings2, EyeOff, X } from 'lucide-react';
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableGroupItem } from './SortableGroupItem';
 
-export function CategorySidebar() {
+export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
   const {
     channels,
     sortableGroups,
@@ -29,11 +29,26 @@ export function CategorySidebar() {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
+  const handleGroupClick = (group: string) => {
+    setSelectedGroup(group);
+    if (window.innerWidth < 768 && onSelect) {
+      onSelect();
+    }
+  };
+
   return (
-    <div className={`w-64 bg-slate-50/50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10`}>
+    <div className={`w-full md:w-80 bg-slate-50/50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10`}>
          <div className="p-4 border-b bg-white/80 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">节目分组</h3>
+                <div className="flex items-center gap-2">
+                    <button 
+                      onClick={onSelect} 
+                      className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+                    >
+                        <X size={18} />
+                    </button>
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">节目分组</h3>
+                </div>
                 <div className="flex gap-1">
                     <button onClick={handleCreateGroup} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors" title="新建分组"><Plus size={16}/></button>
                     <button onClick={() => setIsSortingGroups(!isSortingGroups)} className={`p-1.5 rounded-lg transition-all ${isSortingGroups ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'hover:bg-slate-100 text-slate-400'}`} title="管理分组"><Settings2 size={16}/></button>
@@ -48,7 +63,7 @@ export function CategorySidebar() {
          <div className="flex-1 overflow-y-auto py-3 custom-scrollbar">
             <div className="px-3 mb-1">
                 <button 
-                  onClick={() => { setSelectedGroup('全部'); if (window.innerWidth < 768) {} }}
+                  onClick={() => handleGroupClick('全部')}
                   disabled={isSortingGroups}
                   className={`w-full text-left px-4 py-3 text-xs font-bold transition-all rounded-xl ${selectedGroup === '全部' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-white hover:shadow-sm'} ${isSortingGroups ? 'opacity-30 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center justify-between">
@@ -80,7 +95,7 @@ export function CategorySidebar() {
                                         onToggleHide={handleToggleHideGroup}
                                     />
                                 ) : (
-                                    <button onClick={() => setSelectedGroup(g)}
+                                    <button onClick={() => handleGroupClick(g)}
                                       className={`w-full text-left px-4 py-3 text-xs font-bold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-white hover:shadow-sm'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-2 min-w-0">

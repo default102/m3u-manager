@@ -25,13 +25,13 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
   };
   
   return (
-    <div ref={setNodeRef} style={style} className={`flex flex-col gap-2 p-3 rounded-2xl border transition-all duration-200 mb-2 ${isHidden ? 'bg-slate-50/50 border-slate-100' : 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200'}`}>
-       {/* Top Row: Drag Handle + Label + Count */}
-       <div className="flex items-center gap-2 min-w-0">
-          <div {...attributes} {...listeners} className="cursor-grab text-slate-300 p-1 hover:text-blue-500 transition-colors shrink-0" style={{ touchAction: 'none' }}>
-            <GripVertical size={14}/>
-          </div>
-          <span className={`truncate flex-1 text-xs font-bold ${isHidden ? 'text-slate-400 line-through opacity-60' : 'text-slate-700'}`}>
+    <div ref={setNodeRef} style={style} className={`flex items-center gap-2 p-2 rounded-2xl border transition-all duration-200 mb-2 ${isHidden ? 'bg-slate-50/50 border-slate-100' : 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200'}`}>
+       <div {...attributes} {...listeners} className="cursor-grab text-slate-300 p-1 hover:text-blue-500 transition-colors shrink-0" style={{ touchAction: 'none' }}>
+         <GripVertical size={14}/>
+       </div>
+       
+       <div className="flex-1 flex items-center gap-2 min-w-0">
+          <span className={`truncate text-xs font-bold ${isHidden ? 'text-slate-400 line-through opacity-60' : 'text-slate-700'}`}>
             {label}
           </span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded-lg shrink-0 font-bold ${isHidden ? 'bg-slate-100 text-slate-300' : 'bg-blue-50 text-blue-500'}`}>
@@ -39,8 +39,7 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
           </span>
        </div>
        
-       {/* Bottom Row: Action Buttons */}
-       <div className="flex items-center justify-end gap-1 border-t border-slate-50 pt-2 mt-1">
+       <div className="flex items-center gap-0.5 shrink-0">
          {onToggleHide && (
            <button 
              onClick={(e) => {

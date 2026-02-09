@@ -29,16 +29,17 @@ function EditorContent() {
 
   useEffect(() => {
     setMounted(true);
-    if (window.innerWidth < 768) setShowSidebar(false);
+    // On mobile, show sidebar by default if no group is selected or as a starting point
+    // Actually, let's keep it simple: if mobile, sidebar is full screen.
   }, []);
 
   if (!mounted) return <div className="h-full flex items-center justify-center text-slate-400">正在加载编辑器...</div>;
 
   return (
     <div className="flex h-full text-slate-900 overflow-hidden bg-white relative">
-      {showSidebar && <CategorySidebar />}
+      {showSidebar && <CategorySidebar onSelect={() => setShowSidebar(false)} />}
 
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/30">
+      <div className={`flex-1 flex flex-col overflow-hidden bg-slate-50/30 ${showSidebar ? 'hidden md:flex' : 'flex'}`}>
          <EditorHeader showSidebar={showSidebar} onToggleSidebar={() => setShowSidebar(!showSidebar)} />
          <ChannelList />
       </div>
