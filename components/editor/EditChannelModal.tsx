@@ -39,6 +39,7 @@ export function EditChannelModal({ channel, allGroups, onClose, onUpdate }: Prop
       ...channel,
       name: formData.get('name') as string,
       groupTitle: group,
+      tvgId: formData.get('tvgId') as string,
       tvgLogo: formData.get('tvgLogo') as string,
       url: formData.get('url') as string,
     };
@@ -121,9 +122,15 @@ export function EditChannelModal({ channel, allGroups, onClose, onUpdate }: Prop
             </div>
           </div>
           
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Logo 地址</label>
-            <input name="tvgLogo" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none text-xs text-slate-600 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm focus:bg-white" defaultValue={channel.tvgLogo || ''} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400 uppercase ml-1">Logo 地址</label>
+              <input name="tvgLogo" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none text-xs text-slate-600 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm focus:bg-white" defaultValue={channel.tvgLogo || ''} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400 uppercase ml-1">TVG-ID (EPG)</label>
+              <input name="tvgId" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none text-xs text-slate-600 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm focus:bg-white" defaultValue={channel.tvgId || ''} placeholder="例如: CCTV1" />
+            </div>
           </div>
           
           <div className="space-y-2">

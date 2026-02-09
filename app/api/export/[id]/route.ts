@@ -52,7 +52,7 @@ export async function GET(
   
   for (const channel of sortedChannels) {
     const attributes = [];
-    if (channel.tvgId) attributes.push(`tvg-id="${channel.tvgId}"`);
+    if (channel.tvgId && channel.tvgId.trim() !== '') attributes.push(`tvg-id="${channel.tvgId}"`);
     if (channel.tvgName) attributes.push(`tvg-name="${channel.tvgName}"`);
     if (channel.tvgLogo) attributes.push(`tvg-logo="${channel.tvgLogo}"`);
     if (channel.groupTitle) attributes.push(`group-title="${channel.groupTitle}"`);
