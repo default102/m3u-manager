@@ -90,6 +90,13 @@ export function PlaylistProvider({
 
   const closeConfirmModal = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
+  // Sync state when initialPlaylist changes (important for re-imports)
+  useEffect(() => {
+    setChannels(initialPlaylist.channels);
+    setGroupOrder(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
+    setHiddenGroups(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
+  }, [initialPlaylist]);
+
   // --- Derived State ---
 
   const allExistingGroupNames = useMemo(() => {
@@ -157,11 +164,18 @@ export function PlaylistProvider({
             order: channels.length 
         }) 
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) throw new Error('Failed to create channel');
+        return res.json();
+    })
     .then(data => { 
-        setChannels(prev => [...prev, data]); 
+        setChannels(prev => {
+            if (prev.some(c => c.id === data.id)) return prev;
+            return [...prev, data];
+        }); 
         setSelectedGroup(name); 
-    });
+    })
+    .catch(err => alert(err.message));
   };
 
   const handleReorderGroups = (activeId: string, overId: string) => {
