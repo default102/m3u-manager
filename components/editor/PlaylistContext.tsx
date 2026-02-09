@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
 import { Channel, Playlist } from '@/types';
 import { arrayMove } from '@dnd-kit/sortable';
+import { useRouter } from 'next/navigation';
 
 interface PlaylistContextType {
   // State
@@ -71,6 +72,7 @@ export function PlaylistProvider({
   children: React.ReactNode; 
   initialPlaylist: Playlist 
 }) {
+  const router = useRouter();
   const [channels, setChannels] = useState<Channel[]>(initialPlaylist.channels);
   const [groupOrder, setGroupOrder] = useState<string[]>(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
   const [hiddenGroups, setHiddenGroups] = useState<string[]>(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
@@ -90,12 +92,20 @@ export function PlaylistProvider({
 
   const closeConfirmModal = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
-  // Sync state when initialPlaylist changes (important for re-imports)
+  // Use a ref to track if initial sync happened
+  const hasInitialSync = useRef(false);
+
+  // Only sync from initialPlaylist when it changes substantially (like after a re-import)
   useEffect(() => {
-    setChannels(initialPlaylist.channels);
-    setGroupOrder(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
-    setHiddenGroups(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
-  }, [initialPlaylist]);
+    if (hasInitialSync.current) {
+        // If we already have data, only update if the initialPlaylist version is actually different
+        // For simplicity, we sync it, but we also call router.refresh() in actions to keep them in sync
+        setChannels(initialPlaylist.channels);
+        setGroupOrder(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
+        setHiddenGroups(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
+    }
+    hasInitialSync.current = true;
+  }, [initialPlaylist.id, initialPlaylist.updatedAt]); // Assuming there is an updatedAt or just ID
 
   // --- Derived State ---
 
@@ -174,6 +184,7 @@ export function PlaylistProvider({
             return [...prev, data];
         }); 
         setSelectedGroup(name); 
+        router.refresh();
     })
     .catch(err => alert(err.message));
   };
@@ -188,7 +199,7 @@ export function PlaylistProvider({
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ groupOrder: newOrder })
-        });
+        }).then(() => router.refresh());
     }
   };
 
@@ -203,7 +214,7 @@ export function PlaylistProvider({
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ channelIds: reordered.map(c => c.id) })
-        });
+        }).then(() => router.refresh());
     }
   };
 
@@ -226,6 +237,7 @@ export function PlaylistProvider({
     if (res.ok) {
         setChannels(prev => prev.map(c => c.id === updated.id ? updated : c));
         setEditingChannel(null);
+        router.refresh();
     }
   };
 
@@ -239,6 +251,7 @@ export function PlaylistProvider({
             closeConfirmModal();
             setChannels(prev => prev.filter(c => c.id !== id));
             await fetch(`/api/channel/${id}`, { method: 'DELETE' });
+            router.refresh();
         }
     });
   };
@@ -259,6 +272,7 @@ export function PlaylistProvider({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'delete', ids: idsToDelete })
             });
+            router.refresh();
         }
     });
   };
@@ -272,6 +286,7 @@ export function PlaylistProvider({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'move', ids: idsToMove, data: { groupTitle: targetGroup } })
     });
+    router.refresh();
   };
 
   const handleDeleteGroup = (groupName: string) => {
@@ -309,6 +324,7 @@ export function PlaylistProvider({
             if (selectedGroup === groupName) {
                 setSelectedGroup('全部');
             }
+            router.refresh();
         }
     });
   };
@@ -343,6 +359,7 @@ export function PlaylistProvider({
     if (selectedGroup === oldName) {
         setSelectedGroup(newName);
     }
+    router.refresh();
   };
 
   const handleToggleHideGroup = (groupName: string) => {
@@ -356,7 +373,7 @@ export function PlaylistProvider({
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hiddenGroups: newHidden })
-    });
+    }).then(() => router.refresh());
   };
 
   const value = {
