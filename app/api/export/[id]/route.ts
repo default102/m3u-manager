@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -53,7 +55,7 @@ export async function GET(
   for (const channel of sortedChannels) {
     const attributes = [];
     if (channel.tvgId && channel.tvgId.trim() !== '') attributes.push(`tvg-id="${channel.tvgId}"`);
-    if (channel.tvgName) attributes.push(`tvg-name="${channel.tvgName}"`);
+    if (channel.tvgName && channel.tvgName !== channel.name) attributes.push(`tvg-name="${channel.tvgName}"`);
     if (channel.tvgLogo) attributes.push(`tvg-logo="${channel.tvgLogo}"`);
     if (channel.groupTitle) attributes.push(`group-title="${channel.groupTitle}"`);
     
