@@ -58,6 +58,7 @@ export async function PUT(
               data: {
                   url: url || undefined,
                   groupOrder: null, // 关键：重置分组顺序
+                  hiddenGroups: null, // 同时重置隐藏状态
                   channels: {
                       create: parsed.items.map((item: any, index: number) => {
                           const name = item.name?.trim() || '';
