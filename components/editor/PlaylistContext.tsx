@@ -32,6 +32,7 @@ interface PlaylistContextType {
   setSelectedGroup: (val: string) => void;
   setIsSortingGroups: (val: boolean) => void;
   setEditingChannel: (channel: Channel | null) => void;
+  setSelectedIds: (ids: Set<number>) => void;
   
   // Handlers
   handleCreateGroup: () => void;
@@ -364,6 +365,7 @@ export function PlaylistProvider({
     setSelectedGroup,
     setIsSortingGroups,
     setEditingChannel,
+    setSelectedIds,
     
     handleCreateGroup,
     handleReorderGroups,
