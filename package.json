@@ -1,6 +1,7 @@
 {
   "name": "m3u",
   "version": "0.1.0",
+  "description": "A lightweight and powerful M3U playlist manager with grouping, sorting, and backup features.",
   "private": true,
   "scripts": {
     "dev": "next dev",
