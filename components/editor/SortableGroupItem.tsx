@@ -25,21 +25,29 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
   };
   
   return (
-    <div ref={setNodeRef} style={style} className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold shadow-sm mb-1 group transition-colors ${isHidden ? 'bg-slate-50 border-slate-100 text-slate-400' : 'bg-white border-slate-100 text-black'}`}>
-       <div {...attributes} {...listeners} className="cursor-grab text-slate-300 p-1 hover:text-blue-500" style={{ touchAction: 'none' }}>
-         <GripVertical size={14}/>
+    <div ref={setNodeRef} style={style} className={`flex flex-col gap-2 p-3 rounded-2xl border transition-all duration-200 mb-2 ${isHidden ? 'bg-slate-50/50 border-slate-100' : 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200'}`}>
+       {/* Top Row: Drag Handle + Label + Count */}
+       <div className="flex items-center gap-2 min-w-0">
+          <div {...attributes} {...listeners} className="cursor-grab text-slate-300 p-1 hover:text-blue-500 transition-colors shrink-0" style={{ touchAction: 'none' }}>
+            <GripVertical size={14}/>
+          </div>
+          <span className={`truncate flex-1 text-xs font-bold ${isHidden ? 'text-slate-400 line-through opacity-60' : 'text-slate-700'}`}>
+            {label}
+          </span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-lg shrink-0 font-bold ${isHidden ? 'bg-slate-100 text-slate-300' : 'bg-blue-50 text-blue-500'}`}>
+            {count}
+          </span>
        </div>
-       <span className={`truncate flex-1 ${isHidden ? 'line-through opacity-60' : ''}`}>{label}</span>
-       <span className="text-[10px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">{count}</span>
        
-       <div className="flex items-center gap-1 transition-all">
+       {/* Bottom Row: Action Buttons */}
+       <div className="flex items-center justify-end gap-1 border-t border-slate-50 pt-2 mt-1">
          {onToggleHide && (
            <button 
              onClick={(e) => {
                e.stopPropagation();
                onToggleHide(id);
              }}
-             className={`p-1 rounded ${isHidden ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300 hover:text-blue-500 hover:bg-blue-50'}`}
+             className={`p-1.5 rounded-lg transition-all ${isHidden ? 'text-blue-500 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
              title={isHidden ? "显示分类" : "隐藏分类"}
            >
              {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -52,7 +60,8 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
                e.stopPropagation();
                onRename(label);
              }}
-             className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded"
+             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+             title="重命名"
            >
              <Edit2 size={14} />
            </button>
@@ -64,7 +73,8 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
                e.stopPropagation();
                onDelete(id);
              }}
-             className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded"
+             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+             title="删除"
            >
              <Trash2 size={14} />
            </button>

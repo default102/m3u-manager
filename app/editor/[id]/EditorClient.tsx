@@ -304,25 +304,11 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
 
   return (
     <div className="flex h-full text-slate-900 overflow-hidden bg-white relative">
-      <div className={`${showGroups ? (isSortingGroups ? 'w-80' : 'w-64') : 'w-0'} bg-slate-50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10 text-black`}>
-         <div className="p-4 border-b bg-white">
-            <div className="flex items-center justify-between mb-3 text-black">
-                <div className="min-w-0">
-                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                        共 {stats.totalGroups} 分类 / {stats.totalChannels} 频道
-                    </h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[11px] text-blue-600 font-extrabold whitespace-nowrap">
-                            有效: {stats.totalGroups - stats.hiddenGroupsCount} 分类 / {stats.totalChannels - stats.hiddenChannelsCount} 频道
-                        </p>
-                        {(stats.hiddenGroupsCount > 0 || stats.hiddenChannelsCount > 0) && (
-                            <span className="text-[9px] text-slate-300 font-bold whitespace-nowrap">
-                                (隐藏: {stats.hiddenGroupsCount}组/{stats.hiddenChannelsCount}台)
-                            </span>
-                        )}
-                    </div>
-                </div>
-                <div className="flex gap-1 text-black shrink-0">
+      <div className={`${showGroups ? (isSortingGroups ? 'w-80' : 'w-64') : 'w-0'} bg-slate-50/50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10`}>
+         <div className="p-4 border-b bg-white/80 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">节目分组</h3>
+                <div className="flex gap-1">
                     <button onClick={() => {
                         const name = prompt("输入新分组名称:");
                         if (name) {
@@ -343,24 +329,25 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
                                 setSelectedGroup(name); 
                             });
                         }
-                    }} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600" title="新建分组"><Plus size={16}/></button>
+                    }} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors" title="新建分组"><Plus size={16}/></button>
                     <button onClick={() => setIsSortingGroups(!isSortingGroups)} className={`p-1.5 rounded-lg transition-all ${isSortingGroups ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'hover:bg-slate-100 text-slate-400'}`} title="管理分组"><Settings2 size={16}/></button>
                 </div>
             </div>
-            <div className="relative text-black">
+            <div className="relative">
                 <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                <input className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-lg outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 transition-all text-black" placeholder="快速过滤..." value={search} onChange={e => setSearch(e.target.value)} />
+                <input className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" placeholder="搜索分组..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
          </div>
-         <div className="flex-1 overflow-y-auto py-2 custom-scrollbar text-black font-bold">
-            <div className="px-2 mb-1">
+         
+         <div className="flex-1 overflow-y-auto py-3 custom-scrollbar">
+            <div className="px-3 mb-1">
                 <button 
                   onClick={() => { setSelectedGroup('全部'); if (window.innerWidth < 768) setShowGroups(false); }}
                   disabled={isSortingGroups}
-                  className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-all rounded-xl ${selectedGroup === '全部' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-slate-200/50'} ${isSortingGroups ? 'opacity-30 cursor-not-allowed' : ''}`}>
+                  className={`w-full text-left px-4 py-3 text-xs font-bold transition-all rounded-xl ${selectedGroup === '全部' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-white hover:shadow-sm'} ${isSortingGroups ? 'opacity-30 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center justify-between">
-                      <span>全部</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${selectedGroup === '全部' ? 'bg-blue-500 text-blue-50' : 'bg-slate-100 text-slate-400'}`}>
+                      <span>全部频道</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${selectedGroup === '全部' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
                         {channels.length}
                       </span>
                     </div>
@@ -369,107 +356,131 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={sortableGroups} strategy={verticalListSortingStrategy} disabled={!isSortingGroups}>
-                    {sortableGroups.map(g => (
-                        <div key={g} className="px-2 mb-1">
-                            {isSortingGroups ? (
-                                <SortableGroupItem 
-                                    id={g} 
-                                    label={g} 
-                                    count={channels.filter(c => (c.groupTitle || '未分类') === g).length} 
-                                    isHidden={hiddenGroups.includes(g)}
-                                    onDelete={handleDeleteGroup}
-                                    onRename={handleRenameGroup}
-                                    onToggleHide={handleToggleHideGroup}
-                                />
-                            ) : (
-                                <button onClick={() => { setSelectedGroup(g); if (window.innerWidth < 768) setShowGroups(false); }}
-                                  className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-slate-200/50'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        {hiddenGroups.includes(g) && <EyeOff size={12} className="text-slate-400 shrink-0" />}
-                                        <span className={`truncate ${hiddenGroups.includes(g) ? 'line-through' : ''}`}>{g}</span>
-                                      </div>
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${selectedGroup === g ? 'bg-blue-500 text-blue-50' : 'bg-slate-100 text-slate-400'}`}>
-                                        {channels.filter(c => (c.groupTitle || '未分类') === g).length}
-                                      </span>
-                                    </div>
-                                </button>
-                            )}
-                        </div>
-                    ))}
+                    <div className="px-3 space-y-1">
+                        {sortableGroups.map(g => (
+                            <div key={g}>
+                                {isSortingGroups ? (
+                                    <SortableGroupItem 
+                                        id={g} 
+                                        label={g} 
+                                        count={channels.filter(c => (c.groupTitle || '未分类') === g).length} 
+                                        isHidden={hiddenGroups.includes(g)}
+                                        onDelete={handleDeleteGroup}
+                                        onRename={handleRenameGroup}
+                                        onToggleHide={handleToggleHideGroup}
+                                    />
+                                ) : (
+                                    <button onClick={() => { setSelectedGroup(g); if (window.innerWidth < 768) setShowGroups(false); }}
+                                      className={`w-full text-left px-4 py-3 text-xs font-bold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-white hover:shadow-sm'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            {hiddenGroups.includes(g) && <EyeOff size={12} className="text-slate-400 shrink-0" />}
+                                            <span className={`truncate ${hiddenGroups.includes(g) ? 'line-through' : ''}`}>{g}</span>
+                                          </div>
+                                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${selectedGroup === g ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                            {channels.filter(c => (c.groupTitle || '未分类') === g).length}
+                                          </span>
+                                        </div>
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </SortableContext>
             </DndContext>
          </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-         <div className="p-4 border-b flex justify-between items-center bg-white z-10 text-black">
-             <div className="flex items-center gap-3 overflow-hidden">
-               <button onClick={() => setShowGroups(!showGroups)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 shrink-0"><ListFilter size={18} /></button>
+      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/30">
+         <div className="p-4 border-b flex justify-between items-center bg-white/80 backdrop-blur-md z-10">
+             <div className="flex items-center gap-4 overflow-hidden">
+               <button onClick={() => setShowGroups(!showGroups)} className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 shrink-0 transition-colors"><ListFilter size={20} /></button>
                
-               <div className="flex items-center gap-2 min-w-0">
-                  <h2 className="font-extrabold text-slate-800 text-sm md:text-base truncate">
-                    {selectedGroup}
-                  </h2>
-                  <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-[10px] md:text-xs shrink-0">{filteredChannels.length}</span>
+               <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-black text-slate-800 text-base md:text-lg truncate">
+                        {selectedGroup}
+                    </h2>
+                    <span className="bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0">{filteredChannels.length} CH</span>
+                    
+                    {selectedGroup !== '全部' && (
+                        <div className="flex items-center gap-1 ml-2 bg-slate-100/50 p-1 rounded-xl shrink-0">
+                           <button 
+                             onClick={() => handleToggleHideGroup(selectedGroup)}
+                             className={`p-1.5 rounded-lg transition-all ${isCurrentGroupHidden ? 'text-blue-600 bg-white shadow-sm' : 'text-slate-400 hover:text-blue-600 hover:bg-white'}`}
+                             title={isCurrentGroupHidden ? "显示此分类" : "在订阅中隐藏此分类"}
+                           >
+                             {isCurrentGroupHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                           </button>
+                           
+                           {selectedGroup !== '未分类' && (
+                             <>
+                               <button 
+                                 onClick={() => handleRenameGroup(selectedGroup)}
+                                 className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all"
+                                 title="重命名此分类"
+                               >
+                                 <Edit2 size={16} />
+                               </button>
+                               <button 
+                                 onClick={() => handleDeleteGroup(selectedGroup)}
+                                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
+                                 title="删除此分类"
+                               >
+                                 <Trash2 size={16} />
+                               </button>
+                             </>
+                           )}
+                        </div>
+                    )}
+                  </div>
                   
-                  {/* Quick Action Shortcuts for Selected Group */}
-                  {selectedGroup !== '全部' && (
-                    <div className="flex items-center gap-1 ml-2 border-l border-slate-100 pl-2 shrink-0">
-                       <button 
-                         onClick={() => handleToggleHideGroup(selectedGroup)}
-                         className={`p-1.5 rounded-md transition-all ${isCurrentGroupHidden ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
-                         title={isCurrentGroupHidden ? "显示此分类" : "在订阅中隐藏此分类"}
-                       >
-                         {isCurrentGroupHidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                       </button>
-                       
-                       {selectedGroup !== '未分类' && (
-                         <>
-                           <button 
-                             onClick={() => handleRenameGroup(selectedGroup)}
-                             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                             title="重命名此分类"
-                           >
-                             <Edit2 size={16} />
-                           </button>
-                           <button 
-                             onClick={() => handleDeleteGroup(selectedGroup)}
-                             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
-                             title="删除此分类"
-                           >
-                             <Trash2 size={16} />
-                           </button>
-                         </>
-                       )}
-                    </div>
-                  )}
+                  {/* Global Stats Integrated in Header */}
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                        Total: {stats.totalGroups} Grp / {stats.totalChannels} Ch
+                    </p>
+                    {(stats.hiddenGroupsCount > 0 || stats.hiddenChannelsCount > 0) && (
+                        <p className="text-[10px] text-amber-500 font-bold uppercase tracking-tighter">
+                            Hidden: {stats.hiddenGroupsCount} Grp / {stats.hiddenChannelsCount} Ch
+                        </p>
+                    )}
+                  </div>
                </div>
              </div>
              
-             <button onClick={() => selectedIds.size === filteredChannels.length ? setSelectedIds(new Set()) : setSelectedIds(new Set(filteredChannels.map(c => c.id)))} className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg shrink-0 ml-2">
-                 {selectedIds.size === filteredChannels.length && filteredChannels.length > 0 ? '取消全选' : '全选'}
+             <button onClick={() => selectedIds.size === filteredChannels.length ? setSelectedIds(new Set()) : setSelectedIds(new Set(filteredChannels.map(c => c.id)))} className="text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-all shrink-0 ml-4">
+                 {selectedIds.size === filteredChannels.length && filteredChannels.length > 0 ? 'DESELECT ALL' : 'SELECT ALL'}
              </button>
          </div>
 
-         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 custom-scrollbar pb-24">
-            <div className="max-w-3xl mx-auto">
+         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar pb-32">
+            <div className="max-w-4xl mx-auto">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={filteredChannels.map(c => `channel-${c.id}`)} strategy={verticalListSortingStrategy} disabled={selectedGroup === '全部' || isSortingGroups}>
-                  {filteredChannels.map(channel => (
-                     <SortableChannelItem 
-                        key={channel.id} 
-                        id={`channel-${channel.id}`} 
-                        channel={channel} 
-                        onEdit={setEditingChannel} 
-                        onDelete={handleSingleDelete}
-                        selected={selectedIds.has(channel.id)}
-                        onToggleSelect={handleToggleSelect}
-                        isAllView={selectedGroup === '全部'}
-                     />
-                  ))}
+                  <div className="grid grid-cols-1 gap-3">
+                    {filteredChannels.map(channel => (
+                       <SortableChannelItem 
+                          key={channel.id} 
+                          id={`channel-${channel.id}`} 
+                          channel={channel} 
+                          onEdit={setEditingChannel} 
+                          onDelete={handleSingleDelete}
+                          selected={selectedIds.has(channel.id)}
+                          onToggleSelect={handleToggleSelect}
+                          isAllView={selectedGroup === '全部'}
+                       />
+                    ))}
+                  </div>
                 </SortableContext>
               </DndContext>
+              
+              {filteredChannels.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 text-slate-300">
+                    <Search size={48} strokeWidth={1} className="mb-4 opacity-20" />
+                    <p className="text-sm font-medium">No channels found in this category</p>
+                </div>
+              )}
             </div>
          </div>
 
