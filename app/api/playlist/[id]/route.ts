@@ -59,16 +59,19 @@ export async function PUT(
                   url: url || undefined,
                   groupOrder: null, // 关键：重置分组顺序
                   channels: {
-                      create: parsed.items.map((item: any, index: number) => ({
-                          name: item.name,
-                          url: item.url,
-                          tvgId: item.tvg?.id || '',
-                          tvgName: item.tvg?.name || '',
-                          tvgLogo: item.tvg?.logo || '',
-                          groupTitle: item.group?.title || '',
-                          duration: -1,
-                          order: index
-                      }))
+                      create: parsed.items.map((item: any, index: number) => {
+                          const tvgName = item.tvg?.name || '';
+                          return {
+                              name: item.name,
+                              url: item.url,
+                              tvgId: item.tvg?.id || '',
+                              tvgName: tvgName === item.name ? '' : tvgName,
+                              tvgLogo: item.tvg?.logo || '',
+                              groupTitle: item.group?.title || '',
+                              duration: -1,
+                              order: index
+                          };
+                      })
                   }
               }
           })

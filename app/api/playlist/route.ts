@@ -28,16 +28,19 @@ export async function POST(request: Request) {
         name: name || 'Untitled Playlist',
         url: url || null,
         channels: {
-          create: parsed.items.map((item: any, index: number) => ({
-            name: item.name,
-            url: item.url,
-            tvgId: item.tvg?.id || '',
-            tvgName: item.tvg?.name || '',
-            tvgLogo: item.tvg?.logo || '',
-            groupTitle: item.group?.title || '',
-            duration: -1, // parser might not strictly give duration in http object
-            order: index
-          }))
+          create: parsed.items.map((item: any, index: number) => {
+            const tvgName = item.tvg?.name || '';
+            return {
+              name: item.name,
+              url: item.url,
+              tvgId: item.tvg?.id || '',
+              tvgName: tvgName === item.name ? '' : tvgName, // Don't store if identical to name
+              tvgLogo: item.tvg?.logo || '',
+              groupTitle: item.group?.title || '',
+              duration: -1,
+              order: index
+            };
+          })
         }
       }
     });
