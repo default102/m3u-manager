@@ -48,10 +48,6 @@ export async function GET(
 
   let m3u = '#EXTM3U\n';
   
-  if (playlist.url) {
-    m3u += `#EXT-X-SESSION-DATA:DATA-ID="com.m3u-manager.source",VALUE="${playlist.url}"\n`;
-  }
-
   for (const channel of sortedChannels) {
     const attributes = [];
     if (channel.tvgId) attributes.push(`tvg-id="${channel.tvgId}"`);
@@ -60,16 +56,18 @@ export async function GET(
     if (channel.groupTitle) attributes.push(`group-title="${channel.groupTitle}"`);
     
     const attrString = attributes.length > 0 ? ' ' + attributes.join(' ') : '';
-    const duration = channel.duration || -1;
+    const duration = channel.duration ?? -1;
     
     m3u += `#EXTINF:${duration}${attrString},${channel.name}\n`;
     m3u += `${channel.url}\n`;
   }
 
+  // Use a more standard Content-Type and ensure no UTF-8 BOM if needed, 
+  // but usually plain text/mpegurl is fine.
   return new NextResponse(m3u, {
     headers: {
-      'Content-Type': 'application/x-mpegurl',
-      'Content-Disposition': `attachment; filename="${playlist.name.replace(/[^a-z0-9]/gi, '_')}.m3u"`
+      'Content-Type': 'application/vnd.apple.mpegurl',
+      'Access-Control-Allow-Origin': '*',
     }
   });
 }
