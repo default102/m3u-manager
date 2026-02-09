@@ -7,7 +7,9 @@ import { CategorySidebar } from '@/components/editor/CategorySidebar';
 import { EditorHeader } from '@/components/editor/EditorHeader';
 import { ChannelList } from '@/components/editor/ChannelList';
 import { EditChannelModal } from '@/components/editor/EditChannelModal';
+import { AddChannelModal } from '@/components/editor/AddChannelModal';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { GlobalHeader } from '@/components/editor/GlobalHeader';
 
 function EditorContent() {
   const [showSidebar, setShowSidebar] = useState(true);
@@ -19,7 +21,10 @@ function EditorContent() {
     setEditingChannel, 
     handleUpdateChannel,
     confirmModal,
-    closeConfirmModal
+    closeConfirmModal,
+    isAddingChannel,
+    setIsAddingChannel,
+    handleAddChannel
   } = usePlaylist();
 
   useEffect(() => {
@@ -47,6 +52,14 @@ function EditorContent() {
         />
       )}
 
+      {isAddingChannel && (
+        <AddChannelModal 
+            allGroups={allExistingGroupNames} 
+            onClose={() => setIsAddingChannel(false)} 
+            onAdd={handleAddChannel} 
+        />
+      )}
+
       <ConfirmModal 
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
@@ -62,7 +75,12 @@ function EditorContent() {
 export default function EditorClient({ playlist }: { playlist: Playlist }) {
   return (
     <PlaylistProvider initialPlaylist={playlist}>
-      <EditorContent />
+      <div className="h-screen flex flex-col bg-white overflow-hidden">
+         <GlobalHeader playlistName={playlist.name} />
+         <main className="flex-1 overflow-hidden relative">
+            <EditorContent />
+         </main>
+      </div>
     </PlaylistProvider>
   );
 }

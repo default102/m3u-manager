@@ -13,13 +13,15 @@ export function ChannelList() {
     selectedGroup,
     isSortingGroups,
     selectedIds,
+    hiddenChannels,
     allExistingGroupNames,
     handleReorderChannels,
     setEditingChannel,
     handleSingleDelete,
     handleToggleSelect,
     handleBatchDelete,
-    handleBatchMove
+    handleBatchMove,
+    handleToggleHideChannel
   } = usePlaylist();
 
   const sensors = useSensors(
@@ -48,7 +50,9 @@ export function ChannelList() {
                           onEdit={setEditingChannel} 
                           onDelete={handleSingleDelete}
                           selected={selectedIds.has(channel.id)}
+                          isHidden={hiddenChannels.includes(channel.id)}
                           onToggleSelect={handleToggleSelect}
+                          onToggleHide={handleToggleHideChannel}
                           isAllView={selectedGroup === '全部'}
                        />
                     ))}

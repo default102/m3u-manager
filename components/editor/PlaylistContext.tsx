@@ -11,11 +11,13 @@ interface PlaylistContextType {
   channels: Channel[];
   groupOrder: string[];
   hiddenGroups: string[];
+  hiddenChannels: number[];
   selectedGroup: string;
   search: string;
   selectedIds: Set<number>;
   editingChannel: Channel | null;
   isSortingGroups: boolean;
+  isAddingChannel: boolean;
   
   // Derived State
   allExistingGroupNames: string[];
@@ -33,15 +35,18 @@ interface PlaylistContextType {
   setSelectedGroup: (val: string) => void;
   setIsSortingGroups: (val: boolean) => void;
   setEditingChannel: (channel: Channel | null) => void;
+  setIsAddingChannel: (val: boolean) => void;
   setSelectedIds: (ids: Set<number>) => void;
   
   // Handlers
   handleCreateGroup: () => void;
+  handleAddChannel: (channel: Omit<Channel, 'id' | 'playlistId' | 'order' | 'createdAt' | 'updatedAt' | 'duration'>) => Promise<void>;
   handleReorderGroups: (activeId: string, overId: string) => void;
   handleReorderChannels: (activeId: number, overId: number) => void;
   handleToggleSelect: (id: number) => void;
   handleSelectAll: () => void;
   handleDeselectAll: () => void;
+  handleToggleHideChannel: (channelId: number) => void;
   
   // CRUD & Management
   handleUpdateChannel: (updated: Channel) => Promise<void>;
@@ -76,10 +81,12 @@ export function PlaylistProvider({
   const [channels, setChannels] = useState<Channel[]>(initialPlaylist.channels);
   const [groupOrder, setGroupOrder] = useState<string[]>(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
   const [hiddenGroups, setHiddenGroups] = useState<string[]>(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
+  const [hiddenChannels, setHiddenChannels] = useState<number[]>(initialPlaylist.hiddenChannels ? JSON.parse(initialPlaylist.hiddenChannels) : []);
   const [selectedGroup, setSelectedGroup] = useState<string>('全部');
   const [search, setSearch] = useState('');
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
   const [isSortingGroups, setIsSortingGroups] = useState(false);
+  const [isAddingChannel, setIsAddingChannel] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   
   const [confirmModal, setConfirmModal] = useState({
@@ -103,6 +110,7 @@ export function PlaylistProvider({
         setChannels(initialPlaylist.channels);
         setGroupOrder(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
         setHiddenGroups(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
+        setHiddenChannels(initialPlaylist.hiddenChannels ? JSON.parse(initialPlaylist.hiddenChannels) : []);
     }
     hasInitialSync.current = true;
   }, [initialPlaylist.id, initialPlaylist.updatedAt]); // Assuming there is an updatedAt or just ID
@@ -139,12 +147,13 @@ export function PlaylistProvider({
     const totalGroups = sortableGroups.length;
     const hiddenGroupsCount = hiddenGroups.length;
     
+    // Count channels that are EITHER in a hidden group OR individually hidden
     const hiddenChannelsCount = channels.filter(c => 
-      hiddenGroups.includes(c.groupTitle || '未分类')
+      hiddenGroups.includes(c.groupTitle || '未分类') || hiddenChannels.includes(c.id)
     ).length;
 
     return { totalChannels, totalGroups, hiddenGroupsCount, hiddenChannelsCount };
-  }, [channels, sortableGroups, hiddenGroups]);
+  }, [channels, sortableGroups, hiddenGroups, hiddenChannels]);
 
   const filteredChannels = useMemo(() => {
     let res = [...channels];
@@ -187,6 +196,31 @@ export function PlaylistProvider({
         router.refresh();
     })
     .catch(err => alert(err.message));
+  };
+
+  const handleAddChannel = async (newChannel: Omit<Channel, 'id' | 'playlistId' | 'order' | 'createdAt' | 'updatedAt' | 'duration'>) => {
+    try {
+      const res = await fetch(`/api/playlist/${initialPlaylist.id}/channel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newChannel)
+      });
+      
+      if (!res.ok) throw new Error('Failed to create channel');
+      
+      const createdChannel = await res.json();
+      
+      setChannels(prev => [...prev, createdChannel]);
+      setIsAddingChannel(false);
+      router.refresh();
+      
+      if (createdChannel.groupTitle && createdChannel.groupTitle !== selectedGroup && selectedGroup !== '全部') {
+           // Optionally switch view or just notify
+      }
+    } catch (error) {
+      console.error(error);
+      alert('添加频道失败');
+    }
   };
 
   const handleReorderGroups = (activeId: string, overId: string) => {
@@ -376,16 +410,31 @@ export function PlaylistProvider({
     }).then(() => router.refresh());
   };
 
+  const handleToggleHideChannel = (channelId: number) => {
+    const newHidden = hiddenChannels.includes(channelId)
+      ? hiddenChannels.filter(id => id !== channelId)
+      : [...hiddenChannels, channelId];
+    
+    setHiddenChannels(newHidden);
+    fetch(`/api/playlist/${initialPlaylist.id}/hidden-channels`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hiddenChannels: newHidden })
+    }).then(() => router.refresh());
+  };
+
   const value = {
     playlistId: initialPlaylist.id,
     channels,
     groupOrder,
     hiddenGroups,
+    hiddenChannels,
     selectedGroup,
     search,
     selectedIds,
     editingChannel,
     isSortingGroups,
+    isAddingChannel,
     
     allExistingGroupNames,
     sortableGroups,
@@ -396,14 +445,17 @@ export function PlaylistProvider({
     setSelectedGroup,
     setIsSortingGroups,
     setEditingChannel,
+    setIsAddingChannel,
     setSelectedIds,
     
     handleCreateGroup,
+    handleAddChannel,
     handleReorderGroups,
     handleReorderChannels,
     handleToggleSelect,
     handleSelectAll,
     handleDeselectAll,
+    handleToggleHideChannel,
     
     handleUpdateChannel,
     handleSingleDelete,

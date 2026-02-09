@@ -62,24 +62,7 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
                )}
              </div>
              
-             {/* Global Stats Integrated in Header */}
-             <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                    共 {stats.totalGroups} 分类 / {stats.totalChannels} 频道
-                </span>
-                <span className="text-[10px] text-slate-300 font-bold">|</span>
-                <span className="text-[10px] text-blue-600 font-bold uppercase tracking-tighter">
-                    有效: {stats.totalGroups - stats.hiddenGroupsCount} 分类 / {stats.totalChannels - stats.hiddenChannelsCount} 频道
-                </span>
-                {(stats.hiddenGroupsCount > 0 || stats.hiddenChannelsCount > 0) && (
-                    <>
-                        <span className="text-[10px] text-slate-300 font-bold">|</span>
-                        <span className="text-[10px] text-amber-500 font-bold uppercase tracking-tighter">
-                            隐藏: {stats.hiddenGroupsCount} 组 / {stats.hiddenChannelsCount} 台
-                        </span>
-                    </>
-                )}
-             </div>
+             {/* Global Stats Integrated in Header - Removed */}
           </div>
         </div>
         

@@ -17,6 +17,7 @@ model Playlist {
   url       String?   // Source URL if imported from web
   groupOrder String?  // JSON string of group names in order
   hiddenGroups String? // JSON string of hidden group names
+  hiddenChannels String? // JSON string of hidden channel IDs
   channels  Channel[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

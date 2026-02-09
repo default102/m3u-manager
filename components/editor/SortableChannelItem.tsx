@@ -1,6 +1,6 @@
 'use client';
 
-import { GripVertical, Edit2, Trash2, CheckSquare, Square } from 'lucide-react';
+import { GripVertical, Edit2, Trash2, CheckSquare, Square, Eye, EyeOff } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Channel } from '@/types';
@@ -9,10 +9,12 @@ interface Props {
   id: string;
   channel: Channel;
   selected: boolean;
+  isHidden: boolean;
   isAllView: boolean;
   onEdit: (c: Channel) => void;
   onDelete: (id: number) => void;
   onToggleSelect: (id: number) => void;
+  onToggleHide: (id: number) => void;
 }
 
 export function SortableChannelItem({ 
@@ -21,7 +23,9 @@ export function SortableChannelItem({
     onEdit, 
     onDelete, 
     selected, 
+    isHidden,
     onToggleSelect,
+    onToggleHide,
     isAllView
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -29,8 +33,9 @@ export function SortableChannelItem({
   const style = { 
     transform: CSS.Transform.toString(transform), 
     transition, 
-    opacity: isDragging ? 0.5 : 1, 
-    zIndex: isDragging ? 50 : 0 
+    opacity: isDragging ? 0.5 : (isHidden ? 0.6 : 1), 
+    zIndex: isDragging ? 50 : 0,
+    filter: isHidden ? 'grayscale(100%)' : 'none'
   };
 
   return (
@@ -57,11 +62,21 @@ export function SortableChannelItem({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-slate-800 text-sm md:text-base truncate">{channel.name}</div>
+        <div className="flex items-center gap-2">
+            <div className={`font-bold text-sm md:text-base truncate ${isHidden ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{channel.name}</div>
+            {isHidden && <span className="text-[10px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded font-bold">隐藏</span>}
+        </div>
         <div className="text-[10px] md:text-xs text-slate-400 truncate font-mono mt-0.5 opacity-60">{channel.url}</div>
       </div>
 
       <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+         <button 
+           onClick={() => onToggleHide(channel.id)} 
+           className={`p-2 rounded-lg transition-colors ${isHidden ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-50'}`}
+           title={isHidden ? "取消隐藏" : "隐藏频道"}
+         >
+            {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+         </button>
          <button onClick={() => onEdit(channel)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
             <Edit2 size={16} />
          </button>
