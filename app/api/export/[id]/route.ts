@@ -21,8 +21,10 @@ export async function GET(
     return new NextResponse('Playlist not found', { status: 404 });
   }
 
+  const hiddenGroups = playlist.hiddenGroups ? JSON.parse(playlist.hiddenGroups) as string[] : [];
+
   // Sort channels by groupOrder first, then by channel order
-  let sortedChannels = [...playlist.channels];
+  let sortedChannels = playlist.channels.filter(c => !hiddenGroups.includes(c.groupTitle || '未分类'));
   if (playlist.groupOrder) {
     const groupOrder = JSON.parse(playlist.groupOrder) as string[];
     sortedChannels.sort((a, b) => {

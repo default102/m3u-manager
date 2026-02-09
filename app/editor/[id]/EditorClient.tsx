@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ListFilter, Plus, Settings2 } from 'lucide-react';
+import { Search, ListFilter, Plus, Settings2, EyeOff } from 'lucide-react';
 import {
   DndContext, 
   closestCenter,
@@ -29,6 +29,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 export default function EditorClient({ playlist }: { playlist: Playlist }) {
   const [channels, setChannels] = useState<Channel[]>(playlist.channels);
   const [groupOrder, setGroupOrder] = useState<string[]>(playlist.groupOrder ? JSON.parse(playlist.groupOrder) : []);
+  const [hiddenGroups, setHiddenGroups] = useState<string[]>(playlist.hiddenGroups ? JSON.parse(playlist.hiddenGroups) : []);
   const [selectedGroup, setSelectedGroup] = useState<string>('全部');
   const [search, setSearch] = useState('');
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
@@ -60,9 +61,6 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
   const sortableGroups = useMemo(() => {
     const seen = new Set<string>();
     const orderInFile: string[] = [];
-    
-    // 我们需要确保即使是新创建的没有频道的空分组也能在排序模式下显示（如果它们在 groupOrder 中）
-    // 但通常分组是基于频道的 groupTitle 动态生成的
     
     channels.forEach(c => {
         const title = c.groupTitle || '未分类';
@@ -184,18 +182,15 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
           onConfirm: async () => {
               setConfirmModal(prev => ({ ...prev, isOpen: false }));
               
-              // 找到该分组下的所有频道 ID
               const channelIdsToMove = channels
                 .filter(c => (c.groupTitle || '未分类') === groupName)
                 .map(c => c.id);
 
               if (channelIdsToMove.length > 0) {
-                  // 更新本地状态
                   setChannels(prev => prev.map(c => 
                     channelIdsToMove.includes(c.id) ? { ...c, groupTitle: '' } : c
                   ));
 
-                  // 发送批量更新请求
                   await fetch('/api/channel/batch', {
                       method: 'PATCH',
                       headers: { 'Content-Type': 'application/json' },
@@ -207,11 +202,9 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
                   });
               }
 
-              // 更新分组顺序状态，移除该分组
               const newOrder = groupOrder.filter(g => g !== groupName);
               setGroupOrder(newOrder);
               
-              // 如果当前选中的是这个分组，切换到“全部”
               if (selectedGroup === groupName) {
                   setSelectedGroup('全部');
               }
@@ -228,12 +221,10 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
         .map(c => c.id);
 
       if (channelIdsToMove.length > 0) {
-          // 更新本地状态
           setChannels(prev => prev.map(c => 
             channelIdsToMove.includes(c.id) ? { ...c, groupTitle: newName } : c
           ));
 
-          // 发送批量更新请求
           fetch('/api/channel/batch', {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
@@ -245,14 +236,25 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
           });
       }
 
-      // 更新分组顺序状态
       const newOrder = groupOrder.map(g => g === oldName ? newName : g);
       setGroupOrder(newOrder);
       
-      // 更新当前选中分组
       if (selectedGroup === oldName) {
           setSelectedGroup(newName);
       }
+  };
+
+  const handleToggleHideGroup = (groupName: string) => {
+      const newHidden = hiddenGroups.includes(groupName)
+        ? hiddenGroups.filter(g => g !== groupName)
+        : [...hiddenGroups, groupName];
+      
+      setHiddenGroups(newHidden);
+      fetch(`/api/playlist/${playlist.id}/hidden-groups`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hiddenGroups: newHidden })
+      });
   };
 
   const handleBatchMove = async (targetGroup: string) => {
@@ -340,14 +342,19 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
                                     id={g} 
                                     label={g} 
                                     count={channels.filter(c => (c.groupTitle || '未分类') === g).length} 
+                                    isHidden={hiddenGroups.includes(g)}
                                     onDelete={handleDeleteGroup}
                                     onRename={handleRenameGroup}
+                                    onToggleHide={handleToggleHideGroup}
                                 />
                             ) : (
                                 <button onClick={() => { setSelectedGroup(g); if (window.innerWidth < 768) setShowGroups(false); }}
-                                  className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-slate-200/50'}`}>
+                                  className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-slate-200/50'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
                                     <div className="flex items-center justify-between">
-                                      <span className="truncate">{g}</span>
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        {hiddenGroups.includes(g) && <EyeOff size={12} className="text-slate-400 shrink-0" />}
+                                        <span className={`truncate ${hiddenGroups.includes(g) ? 'line-through' : ''}`}>{g}</span>
+                                      </div>
                                       <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${selectedGroup === g ? 'bg-blue-500 text-blue-50' : 'bg-slate-100 text-slate-400'}`}>
                                         {channels.filter(c => (c.groupTitle || '未分类') === g).length}
                                       </span>
@@ -376,7 +383,7 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
          </div>
 
          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 custom-scrollbar pb-24">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-3xl auto">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={filteredChannels.map(c => `channel-${c.id}`)} strategy={verticalListSortingStrategy} disabled={selectedGroup === '全部' || isSortingGroups}>
                   {filteredChannels.map(channel => (
