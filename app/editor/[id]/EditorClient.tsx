@@ -78,6 +78,23 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
     return orderInFile;
   }, [channels, groupOrder]);
 
+  const stats = useMemo(() => {
+    const totalChannels = channels.length;
+    const totalGroups = sortableGroups.length;
+    const hiddenGroupsCount = hiddenGroups.length;
+    
+    const hiddenChannelsCount = channels.filter(c => 
+      hiddenGroups.includes(c.groupTitle || '未分类')
+    ).length;
+
+    return {
+      totalChannels,
+      totalGroups,
+      hiddenGroupsCount,
+      hiddenChannelsCount
+    };
+  }, [channels, sortableGroups, hiddenGroups]);
+
   const filteredChannels = useMemo(() => {
     let res = [...channels];
     if (selectedGroup !== '全部') {
@@ -290,8 +307,17 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
       <div className={`${showGroups ? (isSortingGroups ? 'w-80' : 'w-64') : 'w-0'} bg-slate-50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10 text-black`}>
          <div className="p-4 border-b bg-white">
             <div className="flex items-center justify-between mb-3 text-black">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest text-black">节目分组</h3>
-                <div className="flex gap-1 text-black">
+                <div className="min-w-0">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
+                        {stats.totalGroups} 分类 / {stats.totalChannels} 频道
+                    </h3>
+                    {(stats.hiddenGroupsCount > 0 || stats.hiddenChannelsCount > 0) && (
+                        <p className="text-[9px] text-amber-500 font-bold mt-0.5">
+                            已隐藏: {stats.hiddenGroupsCount} 组 ({stats.hiddenChannelsCount} 台)
+                        </p>
+                    )}
+                </div>
+                <div className="flex gap-1 text-black shrink-0">
                     <button onClick={() => {
                         const name = prompt("输入新分组名称:");
                         if (name) {
