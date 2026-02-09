@@ -10,4 +10,8 @@ services:
       - ./data:/app/data
     environment:
       - DATABASE_URL=file:/app/data/db.sqlite
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     restart: always
