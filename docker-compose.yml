@@ -8,6 +8,7 @@ services:
       - "3000:3000"
     volumes:
       - ./data:/app/data
+      - ./backups:/app/backups
     environment:
       - DATABASE_URL=file:/app/data/db.sqlite
     deploy:

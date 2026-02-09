@@ -46,7 +46,7 @@ export async function GET(
     });
   }
 
-  let m3u = '#EXTM3U\n';
+  let m3u = '#EXTM3U\r\n';
   
   for (const channel of sortedChannels) {
     const attributes = [];
@@ -58,15 +58,13 @@ export async function GET(
     const attrString = attributes.length > 0 ? ' ' + attributes.join(' ') : '';
     const duration = channel.duration ?? -1;
     
-    m3u += `#EXTINF:${duration}${attrString},${channel.name}\n`;
-    m3u += `${channel.url}\n`;
+    m3u += `#EXTINF:${duration}${attrString},${channel.name}\r\n`;
+    m3u += `${channel.url}\r\n`;
   }
 
-  // Use a more standard Content-Type and ensure no UTF-8 BOM if needed, 
-  // but usually plain text/mpegurl is fine.
   return new NextResponse(m3u, {
     headers: {
-      'Content-Type': 'application/vnd.apple.mpegurl',
+      'Content-Type': 'application/x-mpegurl; charset=utf-8',
       'Access-Control-Allow-Origin': '*',
     }
   });
