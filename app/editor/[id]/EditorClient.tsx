@@ -308,14 +308,19 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
          <div className="p-4 border-b bg-white">
             <div className="flex items-center justify-between mb-3 text-black">
                 <div className="min-w-0">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                        {stats.totalGroups} 分类 / {stats.totalChannels} 频道
+                    <h3 className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">
+                        共 {stats.totalGroups} 分类 / {stats.totalChannels} 频道
                     </h3>
-                    {(stats.hiddenGroupsCount > 0 || stats.hiddenChannelsCount > 0) && (
-                        <p className="text-[9px] text-amber-500 font-bold mt-0.5">
-                            已隐藏: {stats.hiddenGroupsCount} 组 ({stats.hiddenChannelsCount} 台)
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[11px] text-blue-600 font-extrabold whitespace-nowrap">
+                            有效: {stats.totalGroups - stats.hiddenGroupsCount} 分类 / {stats.totalChannels - stats.hiddenChannelsCount} 频道
                         </p>
-                    )}
+                        {(stats.hiddenGroupsCount > 0 || stats.hiddenChannelsCount > 0) && (
+                            <span className="text-[9px] text-slate-300 font-bold whitespace-nowrap">
+                                (隐藏: {stats.hiddenGroupsCount}组/{stats.hiddenChannelsCount}台)
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <div className="flex gap-1 text-black shrink-0">
                     <button onClick={() => {

@@ -38,7 +38,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
-RUN mkdir -p /app/data /app/backups && chown -R nextjs:nodejs /app/data /app/backups
+RUN mkdir -p /app/data/backups && chown -R nextjs:nodejs /app/data
 
 USER nextjs
 

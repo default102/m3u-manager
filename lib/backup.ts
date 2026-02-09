@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import prisma from './prisma';
 
-const BACKUP_DIR = path.join(process.cwd(), 'backups');
+const BACKUP_DIR = path.join(process.cwd(), 'data', 'backups');
 
 const getDbPath = () => {
   const dbUrl = process.env.DATABASE_URL;
