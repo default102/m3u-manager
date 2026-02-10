@@ -262,7 +262,10 @@ export function PlaylistProvider({
     const newIndex = channels.findIndex(c => c.id === overId);
     
     if (oldIndex !== -1 && newIndex !== -1) {
-        const reordered = arrayMove(channels, oldIndex, newIndex);
+        const moved = arrayMove(channels, oldIndex, newIndex);
+        // Optimistically update order based on new index to prevent UI snapping back
+        const reordered = moved.map((c, idx) => ({ ...c, order: idx }));
+        
         setChannels(reordered);
         fetch(`/api/playlist/${initialPlaylist.id}/sort`, {
             method: 'PUT',
