@@ -31,11 +31,8 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
        </div>
        
        <div className="flex-1 flex items-center gap-2 min-w-0">
-          <span className={`truncate text-xs font-bold ${isHidden ? 'text-slate-400 line-through opacity-60' : 'text-slate-700'}`}>
+          <span className={`truncate text-sm font-bold ${isHidden ? 'text-slate-400 line-through opacity-60' : 'text-slate-700'}`}>
             {label}
-          </span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-lg shrink-0 font-bold ${isHidden ? 'bg-slate-100 text-slate-300' : 'bg-blue-50 text-blue-500'}`}>
-            {count}
           </span>
        </div>
        
@@ -46,7 +43,7 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
                e.stopPropagation();
                onToggleHide(id);
              }}
-             className={`p-1.5 rounded-lg transition-all ${isHidden ? 'text-blue-500 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+             className={`p-1.5 rounded-lg transition-all active:scale-90 ${isHidden ? 'text-blue-500 bg-blue-50' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
              title={isHidden ? "显示分类" : "隐藏分类"}
            >
              {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -59,7 +56,7 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
                e.stopPropagation();
                onRename(label);
              }}
-             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+             className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
              title="重命名"
            >
              <Edit2 size={14} />
@@ -72,7 +69,7 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
                e.stopPropagation();
                onDelete(id);
              }}
-             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-90"
              title="删除"
            >
              <Trash2 size={14} />

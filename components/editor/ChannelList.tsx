@@ -31,7 +31,7 @@ export function ChannelList() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/30 relative">
-         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar pb-32">
+         <div className="flex-1 overflow-y-auto p-2 md:p-6 custom-scrollbar pb-32">
             <div className="max-w-4xl mx-auto">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => {
                   if (e.over && e.active.id !== e.over.id) {
@@ -41,7 +41,7 @@ export function ChannelList() {
                   }
               }}>
                 <SortableContext items={filteredChannels.map(c => `channel-${c.id}`)} strategy={verticalListSortingStrategy} disabled={selectedGroup === '全部' || isSortingGroups}>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-2">
                     {filteredChannels.map(channel => (
                        <SortableChannelItem 
                           key={channel.id} 

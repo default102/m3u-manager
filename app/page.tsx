@@ -255,16 +255,17 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-50">
+                  <div className="flex items-center justify-end gap-1 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-50">
                      <Link 
                        href={`/editor/${playlist.id}`} 
-                       className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                       className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-100 rounded-xl transition-all active:scale-95"
+                       title="编辑频道"
                      >
-                       <FileText size={18} /> 编辑
+                       <FileText size={20} />
                      </Link>
                      <button 
                        onClick={() => openUpdateModal(playlist)}
-                       className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                       className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 rounded-xl transition-all active:scale-95"
                        title="更新/重新导入"
                      >
                        <RefreshCw size={20} />
@@ -272,15 +273,15 @@ export default function Home() {
                      <a 
                        href={`/api/export/${playlist.id}`} 
                        target="_blank"
-                       className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                       className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all active:scale-95"
                        title="下载 M3U 文件"
                      >
                        <Download size={20} />
                      </a>
                      <button 
                        onClick={() => handleDelete(playlist.id)}
-                       className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                       title="删除"
+                       className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95"
+                       title="删除列表"
                      >
                        <Trash2 size={20} />
                      </button>

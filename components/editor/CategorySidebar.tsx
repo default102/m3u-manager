@@ -47,7 +47,7 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
                     >
                         <X size={18} />
                     </button>
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">节目分组</h3>
+                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">节目分组</h3>
                 </div>
                 <div className="flex gap-1">
                     <button onClick={handleCreateGroup} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors" title="新建分组"><Plus size={16}/></button>
@@ -56,7 +56,7 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
             </div>
             <div className="relative">
                 <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                <input className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" placeholder="搜索分组..." value={groupSearch} onChange={e => setGroupSearch(e.target.value)} />
+                <input className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" placeholder="搜索分组..." value={groupSearch} onChange={e => setGroupSearch(e.target.value)} />
             </div>
          </div>
          
@@ -65,10 +65,10 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
                 <button 
                   onClick={() => handleGroupClick('全部')}
                   disabled={isSortingGroups}
-                  className={`w-full text-left px-4 py-3 text-xs font-bold transition-all rounded-xl ${selectedGroup === '全部' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-white hover:shadow-sm'} ${isSortingGroups ? 'opacity-30 cursor-not-allowed' : ''}`}>
+                  className={`w-full text-left px-4 py-3 text-sm font-semibold transition-all rounded-xl ${selectedGroup === '全部' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-600 hover:bg-white hover:shadow-sm'} ${isSortingGroups ? 'opacity-30 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center justify-between">
                       <span>全部频道</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${selectedGroup === '全部' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${selectedGroup === '全部' ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
                         {channels.length}
                       </span>
                     </div>
@@ -96,13 +96,13 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
                                     />
                                 ) : (
                                     <button onClick={() => handleGroupClick(g)}
-                                      className={`w-full text-left px-4 py-3 text-xs font-bold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-500 hover:bg-white hover:shadow-sm'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
+                                      className={`w-full text-left px-4 py-3 text-sm font-semibold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-600 hover:bg-white hover:shadow-sm'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-2 min-w-0">
                                             {hiddenGroups.includes(g) && <EyeOff size={12} className="text-slate-400 shrink-0" />}
                                             <span className={`truncate ${hiddenGroups.includes(g) ? 'line-through' : ''}`}>{g}</span>
                                           </div>
-                                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${selectedGroup === g ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                          <span className={`text-xs px-2 py-0.5 rounded-full ${selectedGroup === g ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
                                             {channels.filter(c => (c.groupTitle || '未分类') === g).length}
                                           </span>
                                         </div>

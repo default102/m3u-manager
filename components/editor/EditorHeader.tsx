@@ -43,14 +43,14 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
                         <>
                           <button 
                             onClick={() => handleRenameGroup(selectedGroup)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                             title="重命名此分类"
                           >
                             <Edit2 size={16} />
                           </button>
                           <button 
                             onClick={() => handleDeleteGroup(selectedGroup)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                             title="删除此分类"
                           >
                             <Trash2 size={16} />
