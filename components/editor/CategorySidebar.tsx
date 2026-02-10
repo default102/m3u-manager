@@ -37,8 +37,8 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
   };
 
   return (
-    <div className={`w-full md:w-80 bg-slate-50/50 border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 overflow-hidden z-10`}>
-         <div className="p-4 border-b bg-white/80 backdrop-blur-sm">
+    <div className={`w-full md:w-80 bg-slate-50/50 shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-20 flex flex-col shrink-0 transition-all duration-300 overflow-hidden`}>
+         <div className="p-4 border-b border-slate-100 bg-white/80 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <button 
@@ -47,7 +47,7 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
                     >
                         <X size={18} />
                     </button>
-                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">节目分组</h3>
+                    <h3 className="text-lg font-black text-slate-800">节目分组</h3>
                 </div>
                 <div className="flex gap-1">
                     <button onClick={handleCreateGroup} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 transition-colors" title="新建分组"><Plus size={16}/></button>

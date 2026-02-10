@@ -30,9 +30,9 @@ export function ChannelList() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/30 relative">
-         <div className="flex-1 overflow-y-auto p-2 md:p-6 custom-scrollbar pb-32">
-            <div className="max-w-4xl mx-auto">
+    <div className="flex-1 flex flex-col overflow-hidden bg-slate-100 relative">
+         <div className="flex-1 overflow-y-auto p-2 md:p-4 custom-scrollbar pb-32">
+            <div className="w-full">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => {
                   if (e.over && e.active.id !== e.over.id) {
                       const activeId = parseInt(e.active.id.toString().replace('channel-', ''));

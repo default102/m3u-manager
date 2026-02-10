@@ -25,9 +25,9 @@ export function SortableGroupItem({ id, label, count, isHidden, onDelete, onRena
   };
   
   return (
-    <div ref={setNodeRef} style={style} className={`flex items-center gap-2 p-2 rounded-2xl border transition-all duration-200 mb-2 ${isHidden ? 'bg-slate-50/50 border-slate-100' : 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200'}`}>
-       <div {...attributes} {...listeners} className="cursor-grab text-slate-300 p-1 hover:text-blue-500 transition-colors shrink-0" style={{ touchAction: 'none' }}>
-         <GripVertical size={14}/>
+    <div ref={setNodeRef} style={style} className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 mb-2 group relative ${isDragging ? 'shadow-2xl z-50 ring-2 ring-blue-500 bg-white scale-[1.02]' : (isHidden ? 'bg-slate-50/50' : 'bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5')}`}>
+       <div {...attributes} {...listeners} className="cursor-grab text-slate-300 p-1 hover:text-slate-600 transition-colors shrink-0" style={{ touchAction: 'none' }}>
+         <GripVertical size={16}/>
        </div>
        
        <div className="flex-1 flex items-center gap-2 min-w-0">

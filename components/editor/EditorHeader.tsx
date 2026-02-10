@@ -18,7 +18,7 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
   const isCurrentGroupHidden = hiddenGroups.includes(selectedGroup);
 
   return (
-    <div className="p-4 border-b flex flex-col md:flex-row md:items-center justify-between bg-white/80 backdrop-blur-md z-10 gap-4">
+    <div className="p-4 shadow-md flex flex-col md:flex-row md:items-center justify-between bg-white/80 backdrop-blur-md z-10 gap-4 relative">
         <div className="flex items-center gap-4 overflow-hidden flex-1">
           <button onClick={onToggleSidebar} className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 shrink-0 transition-colors"><ListFilter size={20} /></button>
           

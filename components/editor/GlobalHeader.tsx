@@ -8,7 +8,7 @@ export function GlobalHeader({ playlistName }: { playlistName: string }) {
   const { stats, setIsAddingChannel, playlistId } = usePlaylist();
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shrink-0 z-20 shadow-sm">
+    <header className="bg-white px-4 py-3 flex items-center justify-between shrink-0 z-30 shadow-xl shadow-slate-200/50 relative">
        {/* Left Side: Back + Title + Stats */}
        <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
          <Link href="/" className="p-2 hover:bg-slate-100 rounded-full text-slate-600 transition-colors shrink-0">
