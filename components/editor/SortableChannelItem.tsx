@@ -71,7 +71,7 @@ export function SortableChannelItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all px-2">
+      <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all px-2">
          <button 
            onClick={() => onToggleHide(channel.id)} 
            className={`inline-flex items-center justify-center p-2 rounded-lg transition-all active:scale-90 ${isHidden ? 'text-blue-600 bg-blue-100' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-100'}`}
