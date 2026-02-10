@@ -56,7 +56,7 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
             </div>
             <div className="relative">
                 <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                <input className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" placeholder="搜索分组..." value={groupSearch} onChange={e => setGroupSearch(e.target.value)} />
+                <input className="w-full pl-9 pr-3 py-2 text-base md:text-sm border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" placeholder="搜索分组..." value={groupSearch} onChange={e => setGroupSearch(e.target.value)} />
             </div>
          </div>
          

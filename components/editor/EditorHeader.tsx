@@ -67,7 +67,7 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
             <div className="relative flex-1 md:w-64">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" 
+                    className="w-full pl-9 pr-3 py-2 text-base md:text-xs border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" 
                     placeholder="搜索频道..." 
                     value={channelSearch} 
                     onChange={e => setChannelSearch(e.target.value)} 
