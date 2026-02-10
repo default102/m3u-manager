@@ -13,7 +13,8 @@ interface PlaylistContextType {
   hiddenGroups: string[];
   hiddenChannels: number[];
   selectedGroup: string;
-  search: string;
+  groupSearch: string;
+  channelSearch: string;
   selectedIds: Set<number>;
   editingChannel: Channel | null;
   isSortingGroups: boolean;
@@ -31,7 +32,8 @@ interface PlaylistContextType {
   };
 
   // Actions
-  setSearch: (val: string) => void;
+  setGroupSearch: (val: string) => void;
+  setChannelSearch: (val: string) => void;
   setSelectedGroup: (val: string) => void;
   setIsSortingGroups: (val: boolean) => void;
   setEditingChannel: (channel: Channel | null) => void;
@@ -83,7 +85,8 @@ export function PlaylistProvider({
   const [hiddenGroups, setHiddenGroups] = useState<string[]>(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
   const [hiddenChannels, setHiddenChannels] = useState<number[]>(initialPlaylist.hiddenChannels ? JSON.parse(initialPlaylist.hiddenChannels) : []);
   const [selectedGroup, setSelectedGroup] = useState<string>('全部');
-  const [search, setSearch] = useState('');
+  const [groupSearch, setGroupSearch] = useState('');
+  const [channelSearch, setChannelSearch] = useState('');
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
   const [isSortingGroups, setIsSortingGroups] = useState(false);
   const [isAddingChannel, setIsAddingChannel] = useState(false);
@@ -134,13 +137,20 @@ export function PlaylistProvider({
         }
     });
 
+    let result: string[] = [];
     if (groupOrder.length > 0) {
         const ordered = groupOrder.filter(name => seen.has(name));
         const remaining = orderInFile.filter(name => !ordered.includes(name));
-        return [...ordered, ...remaining];
+        result = [...ordered, ...remaining];
+    } else {
+        result = orderInFile;
     }
-    return orderInFile;
-  }, [channels, groupOrder]);
+
+    if (groupSearch) {
+      result = result.filter(g => g.toLowerCase().includes(groupSearch.toLowerCase()));
+    }
+    return result;
+  }, [channels, groupOrder, groupSearch]);
 
   const stats = useMemo(() => {
     const totalChannels = channels.length;
@@ -160,11 +170,11 @@ export function PlaylistProvider({
     if (selectedGroup !== '全部') {
        res = res.filter(c => (c.groupTitle || '未分类') === selectedGroup);
     }
-    if (search) {
-       res = res.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+    if (channelSearch) {
+       res = res.filter(c => c.name.toLowerCase().includes(channelSearch.toLowerCase()));
     }
     return res;
-  }, [channels, selectedGroup, search]);
+  }, [channels, selectedGroup, channelSearch]);
 
   // --- Actions ---
 
@@ -430,7 +440,8 @@ export function PlaylistProvider({
     hiddenGroups,
     hiddenChannels,
     selectedGroup,
-    search,
+    groupSearch,
+    channelSearch,
     selectedIds,
     editingChannel,
     isSortingGroups,
@@ -441,7 +452,8 @@ export function PlaylistProvider({
     filteredChannels,
     stats,
 
-    setSearch,
+    setGroupSearch,
+    setChannelSearch,
     setSelectedGroup,
     setIsSortingGroups,
     setEditingChannel,

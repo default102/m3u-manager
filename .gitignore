@@ -47,3 +47,4 @@ next-env.d.ts
 /data/
 
 /app/generated/prisma
+dev_server.log

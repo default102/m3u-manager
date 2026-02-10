@@ -24,9 +24,14 @@ export async function GET(
   }
 
   const hiddenGroups = playlist.hiddenGroups ? JSON.parse(playlist.hiddenGroups) as string[] : [];
+  const hiddenChannels = playlist.hiddenChannels ? JSON.parse(playlist.hiddenChannels) as (string | number)[] : [];
+  const hiddenChannelIds = new Set(hiddenChannels.map(id => id.toString()));
 
   // Sort channels by groupOrder first, then by channel order
-  let sortedChannels = playlist.channels.filter(c => !hiddenGroups.includes(c.groupTitle || '未分类'));
+  let sortedChannels = playlist.channels.filter(c => 
+    !hiddenGroups.includes(c.groupTitle || '未分类') &&
+    !hiddenChannelIds.has(c.id.toString())
+  );
   if (playlist.groupOrder) {
     const groupOrder = JSON.parse(playlist.groupOrder) as string[];
     sortedChannels.sort((a, b) => {

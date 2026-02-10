@@ -1,13 +1,12 @@
-'use client';
-
 import { usePlaylist } from './PlaylistContext';
-import { ListFilter, Eye, EyeOff, Edit2, Trash2 } from 'lucide-react';
+import { ListFilter, Eye, EyeOff, Edit2, Trash2, Search } from 'lucide-react';
 
 export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: boolean; onToggleSidebar: () => void }) {
   const {
     selectedGroup,
     filteredChannels,
-    stats,
+    channelSearch,
+    setChannelSearch,
     selectedIds,
     hiddenGroups,
     setSelectedIds,
@@ -19,8 +18,8 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
   const isCurrentGroupHidden = hiddenGroups.includes(selectedGroup);
 
   return (
-    <div className="p-4 border-b flex justify-between items-center bg-white/80 backdrop-blur-md z-10">
-        <div className="flex items-center gap-4 overflow-hidden">
+    <div className="p-4 border-b flex flex-col md:flex-row md:items-center justify-between bg-white/80 backdrop-blur-md z-10 gap-4">
+        <div className="flex items-center gap-4 overflow-hidden flex-1">
           <button onClick={onToggleSidebar} className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 shrink-0 transition-colors"><ListFilter size={20} /></button>
           
           <div className="flex flex-col min-w-0">
@@ -61,17 +60,27 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
                    </div>
                )}
              </div>
-             
-             {/* Global Stats Integrated in Header - Removed */}
           </div>
         </div>
-        
-        <button 
-            onClick={() => selectedIds.size === filteredChannels.length ? setSelectedIds(new Set()) : setSelectedIds(new Set(filteredChannels.map(c => c.id)))} 
-            className="text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-all shrink-0 ml-4"
-        >
-            {selectedIds.size === filteredChannels.length && filteredChannels.length > 0 ? '取消全选' : '全选'}
-        </button>
+
+        <div className="flex items-center gap-2">
+            <div className="relative flex-1 md:w-64">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl outline-none bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-slate-700" 
+                    placeholder="搜索频道..." 
+                    value={channelSearch} 
+                    onChange={e => setChannelSearch(e.target.value)} 
+                />
+            </div>
+            
+            <button 
+                onClick={() => selectedIds.size === filteredChannels.length ? setSelectedIds(new Set()) : setSelectedIds(new Set(filteredChannels.map(c => c.id)))} 
+                className="text-xs font-black text-blue-600 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-all shrink-0 whitespace-nowrap"
+            >
+                {selectedIds.size === filteredChannels.length && filteredChannels.length > 0 ? '取消全选' : '全选'}
+            </button>
+        </div>
     </div>
   );
 }
