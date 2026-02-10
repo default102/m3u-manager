@@ -10,6 +10,7 @@ import { EditChannelModal } from '@/components/editor/EditChannelModal';
 import { AddChannelModal } from '@/components/editor/AddChannelModal';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { GlobalHeader } from '@/components/editor/GlobalHeader';
+import { DuplicateCheckModal } from '@/components/editor/DuplicateCheckModal';
 
 function EditorContent() {
   const [showSidebar, setShowSidebar] = useState(true);
@@ -18,13 +19,16 @@ function EditorContent() {
   const { 
     editingChannel, 
     allExistingGroupNames, 
+    orderedGroupNames,
     setEditingChannel, 
     handleUpdateChannel,
     confirmModal,
     closeConfirmModal,
     isAddingChannel,
     setIsAddingChannel,
-    handleAddChannel
+    handleAddChannel,
+    isDuplicateModalOpen,
+    setIsDuplicateModalOpen
   } = usePlaylist();
 
   useEffect(() => {
@@ -46,6 +50,7 @@ function EditorContent() {
 
       {editingChannel && (
         <EditChannelModal 
+            isOpen={!!editingChannel}
             channel={editingChannel} 
             allGroups={allExistingGroupNames} 
             onClose={() => setEditingChannel(null)} 
@@ -55,11 +60,17 @@ function EditorContent() {
 
       {isAddingChannel && (
         <AddChannelModal 
-            allGroups={allExistingGroupNames} 
+            isOpen={isAddingChannel}
+            allGroups={orderedGroupNames} 
             onClose={() => setIsAddingChannel(false)} 
             onAdd={handleAddChannel} 
         />
       )}
+
+      <DuplicateCheckModal 
+        isOpen={isDuplicateModalOpen}
+        onClose={() => setIsDuplicateModalOpen(false)}
+      />
 
       <ConfirmModal 
         isOpen={confirmModal.isOpen}

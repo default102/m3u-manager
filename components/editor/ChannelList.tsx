@@ -14,7 +14,7 @@ export function ChannelList() {
     isSortingGroups,
     selectedIds,
     hiddenChannels,
-    allExistingGroupNames,
+    orderedGroupNames,
     handleReorderChannels,
     setEditingChannel,
     handleSingleDelete,
@@ -72,7 +72,7 @@ export function ChannelList() {
          {selectedIds.size > 0 && (
              <BatchActionBar 
                 selectedCount={selectedIds.size} 
-                allGroups={allExistingGroupNames} 
+                allGroups={orderedGroupNames} 
                 onMove={handleBatchMove} 
                 onDelete={handleBatchDelete} 
              />

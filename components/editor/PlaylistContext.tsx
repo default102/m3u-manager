@@ -19,9 +19,11 @@ interface PlaylistContextType {
   editingChannel: Channel | null;
   isSortingGroups: boolean;
   isAddingChannel: boolean;
+  isDuplicateModalOpen: boolean;
   
   // Derived State
   allExistingGroupNames: string[];
+  orderedGroupNames: string[];
   sortableGroups: string[];
   filteredChannels: Channel[];
   stats: {
@@ -38,6 +40,7 @@ interface PlaylistContextType {
   setIsSortingGroups: (val: boolean) => void;
   setEditingChannel: (channel: Channel | null) => void;
   setIsAddingChannel: (val: boolean) => void;
+  setIsDuplicateModalOpen: (val: boolean) => void;
   setSelectedIds: (ids: Set<number>) => void;
   
   // Handlers
@@ -90,6 +93,7 @@ export function PlaylistProvider({
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
   const [isSortingGroups, setIsSortingGroups] = useState(false);
   const [isAddingChannel, setIsAddingChannel] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   
   const [confirmModal, setConfirmModal] = useState({
@@ -125,7 +129,7 @@ export function PlaylistProvider({
     return Array.from(names).filter(n => n !== '未分类').sort();
   }, [channels]);
 
-  const sortableGroups = useMemo(() => {
+  const allGroupsInOrder = useMemo(() => {
     const seen = new Set<string>();
     const orderInFile: string[] = [];
     
@@ -145,12 +149,20 @@ export function PlaylistProvider({
     } else {
         result = orderInFile;
     }
+    return result;
+  }, [channels, groupOrder]);
 
+  const orderedGroupNames = useMemo(() => {
+    return allGroupsInOrder.filter(n => n !== '未分类');
+  }, [allGroupsInOrder]);
+
+  const sortableGroups = useMemo(() => {
+    let result = allGroupsInOrder;
     if (groupSearch) {
       result = result.filter(g => g.toLowerCase().includes(groupSearch.toLowerCase()));
     }
     return result;
-  }, [channels, groupOrder, groupSearch]);
+  }, [allGroupsInOrder, groupSearch]);
 
   const stats = useMemo(() => {
     const totalChannels = channels.length;
@@ -166,7 +178,7 @@ export function PlaylistProvider({
   }, [channels, sortableGroups, hiddenGroups, hiddenChannels]);
 
   const filteredChannels = useMemo(() => {
-    let res = [...channels];
+    let res = [...channels].sort((a, b) => a.order - b.order);
     if (selectedGroup !== '全部') {
        res = res.filter(c => (c.groupTitle || '未分类') === selectedGroup);
     }
@@ -182,15 +194,13 @@ export function PlaylistProvider({
     const name = prompt("输入新分组名称:");
     if (!name) return;
     
-    fetch('/api/playlist/dummy-channel', { 
+    fetch(`/api/playlist/${initialPlaylist.id}/channel`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ 
             name: '新频道', 
             url: 'http://', 
-            groupTitle: name, 
-            playlistId: initialPlaylist.id, 
-            order: channels.length 
+            groupTitle: name
         }) 
     })
     .then(res => {
@@ -446,8 +456,10 @@ export function PlaylistProvider({
     editingChannel,
     isSortingGroups,
     isAddingChannel,
+    isDuplicateModalOpen,
     
     allExistingGroupNames,
+    orderedGroupNames,
     sortableGroups,
     filteredChannels,
     stats,
@@ -458,6 +470,7 @@ export function PlaylistProvider({
     setIsSortingGroups,
     setEditingChannel,
     setIsAddingChannel,
+    setIsDuplicateModalOpen,
     setSelectedIds,
     
     handleCreateGroup,

@@ -1,5 +1,5 @@
 import { usePlaylist } from './PlaylistContext';
-import { ListFilter, Eye, EyeOff, Edit2, Trash2, Search } from 'lucide-react';
+import { ListFilter, Eye, EyeOff, Edit2, Trash2, Search, Copy } from 'lucide-react';
 
 export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: boolean; onToggleSidebar: () => void }) {
   const {
@@ -12,7 +12,8 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
     setSelectedIds,
     handleToggleHideGroup,
     handleRenameGroup,
-    handleDeleteGroup
+    handleDeleteGroup,
+    setIsDuplicateModalOpen
   } = usePlaylist();
 
   const isCurrentGroupHidden = hiddenGroups.includes(selectedGroup);
@@ -58,6 +59,10 @@ export function EditorHeader({ showSidebar, onToggleSidebar }: { showSidebar: bo
                         </>
                       )}
                    </div>
+               )}
+
+               {selectedGroup === '全部' && (
+                  <></>
                )}
              </div>
           </div>

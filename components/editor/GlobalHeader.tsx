@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Download, Plus } from 'lucide-react';
+import { ArrowLeft, Download, Plus, Copy } from 'lucide-react';
 import { usePlaylist } from '@/components/editor/PlaylistContext';
 
 export function GlobalHeader({ playlistName }: { playlistName: string }) {
-  const { stats, setIsAddingChannel, playlistId } = usePlaylist();
+  const { stats, setIsAddingChannel, setIsDuplicateModalOpen, playlistId } = usePlaylist();
 
   return (
     <header className="bg-white px-4 py-3 flex items-center justify-between shrink-0 z-30 shadow-xl shadow-slate-200/50 relative">
@@ -41,12 +41,13 @@ export function GlobalHeader({ playlistName }: { playlistName: string }) {
        {/* Right Side: Actions */}
        <div className="flex items-center gap-2 pl-2">
          <button 
-           onClick={() => setIsAddingChannel(true)}
-           className="flex items-center gap-1.5 bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shrink-0 shadow-md whitespace-nowrap"
+           onClick={() => setIsDuplicateModalOpen(true)}
+           className="flex items-center gap-1.5 bg-orange-50 text-orange-600 border border-orange-100 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-bold hover:bg-orange-100 transition-all active:scale-95 shrink-0 shadow-sm whitespace-nowrap"
+           title="检查重复频道"
          >
-            <Plus size={16} /> <span className="hidden sm:inline">添加频道</span>
+            <Copy size={16} /> <span className="hidden sm:inline">查重</span>
          </button>
-         
+
          <a 
            href={`/api/export/${playlistId}`} 
            target="_blank" 
@@ -54,6 +55,13 @@ export function GlobalHeader({ playlistName }: { playlistName: string }) {
          >
             <Download size={16} /> <span className="hidden sm:inline">导出</span>
          </a>
+
+         <button 
+           onClick={() => setIsAddingChannel(true)}
+           className="flex items-center gap-1.5 bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shrink-0 shadow-md whitespace-nowrap"
+         >
+            <Plus size={16} /> <span className="hidden sm:inline">添加频道</span>
+         </button>
        </div>
     </header>
   );
