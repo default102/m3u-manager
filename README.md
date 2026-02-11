@@ -1,4 +1,4 @@
-# M3U Manager (M3U 订阅管理器)
+# M3U Manager
 
 一个轻量级、美观且响应式的 M3U 节目列表管理工具。支持分组编辑、拖拽排序、分类隐藏、数据备份及自动订阅导出。
 
@@ -44,16 +44,42 @@
    npm install
    ```
 
-2. **初始化数据库**：
+2. **配置环境变量**：
+   ```bash
+   cp .env.example .env
+   # 编辑 .env 文件，配置数据库路径
+   ```
+
+3. **初始化数据库**：
    ```bash
    npx prisma db push
    ```
 
-3. **启动服务**：
+4. **启动服务**：
    ```bash
    npm run dev
    ```
    访问 [http://localhost:3000](http://localhost:3000)。
+
+## 📁 项目结构
+
+```
+m3u/
+├── app/                    # Next.js App Router
+│   ├── api/               # API 路由
+│   ├── editor/            # 编辑器页面
+│   └── page.tsx           # 主页
+├── components/            # React 组件
+│   └── editor/           # 编辑器组件
+├── lib/                  # 工具库
+│   ├── constants.ts      # 常量定义
+│   ├── hooks/           # 自定义 Hooks
+│   ├── services/        # 业务服务层
+│   └── utils/           # 工具函数
+├── prisma/              # 数据库 Schema
+├── types/               # TypeScript 类型定义
+└── public/              # 静态资源
+```
 
 ## 📝 订阅说明
 
@@ -65,6 +91,22 @@
 本工具为私有化部署设计，未内置登录鉴权。若需公网访问，建议：
 1. 使用 Nginx / Caddy 配置 **Basic Auth**。
 2. 通过 VPN 或 Tailscale 等内网穿透工具访问。
+
+## 🔧 开发说明
+
+### 代码组织
+
+- **常量管理**：所有常量统一在 `lib/constants.ts` 中定义
+- **类型定义**：TypeScript 类型定义在 `types/index.ts` 中
+- **自定义 Hooks**：可复用的 React hooks 在 `lib/hooks/` 目录
+- **服务层**：业务逻辑抽取到 `lib/services/` 目录
+
+### 编码规范
+
+- 使用 TypeScript 严格模式
+- 避免使用 `any` 类型
+- API 调用使用常量端点
+- 用户提示信息使用常量
 
 ## 📄 开源协议
 

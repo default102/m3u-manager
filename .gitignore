@@ -44,7 +44,16 @@ next-env.d.ts
 *.db
 *.db-journal
 *.sqlite
+*.sqlite-journal
 /data/
 
 /app/generated/prisma
 dev_server.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store

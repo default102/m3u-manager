@@ -1,9 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Channel, Playlist } from '@/types';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useRouter } from 'next/navigation';
+import { API_ENDPOINTS, DEFAULTS, MESSAGES } from '@/lib/constants';
 
 interface PlaylistContextType {
   // State
@@ -20,7 +21,7 @@ interface PlaylistContextType {
   isSortingGroups: boolean;
   isAddingChannel: boolean;
   isDuplicateModalOpen: boolean;
-  
+
   // Derived State
   allExistingGroupNames: string[];
   orderedGroupNames: string[];
@@ -42,7 +43,7 @@ interface PlaylistContextType {
   setIsAddingChannel: (val: boolean) => void;
   setIsDuplicateModalOpen: (val: boolean) => void;
   setSelectedIds: (ids: Set<number>) => void;
-  
+
   // Handlers
   handleCreateGroup: () => void;
   handleAddChannel: (channel: Omit<Channel, 'id' | 'playlistId' | 'order' | 'createdAt' | 'updatedAt' | 'duration'>) => Promise<void>;
@@ -52,7 +53,7 @@ interface PlaylistContextType {
   handleSelectAll: () => void;
   handleDeselectAll: () => void;
   handleToggleHideChannel: (channelId: number) => void;
-  
+
   // CRUD & Management
   handleUpdateChannel: (updated: Channel) => Promise<void>;
   handleSingleDelete: (id: number) => void;
@@ -61,7 +62,7 @@ interface PlaylistContextType {
   handleRenameGroup: (oldName: string) => void;
   handleDeleteGroup: (groupName: string) => void;
   handleToggleHideGroup: (groupName: string) => void;
-  
+
   // Confirmation Modal
   confirmModal: {
     isOpen: boolean;
@@ -75,12 +76,12 @@ interface PlaylistContextType {
 
 const PlaylistContext = createContext<PlaylistContextType | undefined>(undefined);
 
-export function PlaylistProvider({ 
-  children, 
-  initialPlaylist 
-}: { 
-  children: React.ReactNode; 
-  initialPlaylist: Playlist 
+export function PlaylistProvider({
+  children,
+  initialPlaylist
+}: {
+  children: React.ReactNode;
+  initialPlaylist: Playlist
 }) {
   const router = useRouter();
   const [channels, setChannels] = useState<Channel[]>(initialPlaylist.channels);
@@ -95,12 +96,12 @@ export function PlaylistProvider({
   const [isAddingChannel, setIsAddingChannel] = useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  
+
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => {},
+    onConfirm: () => { },
     isDangerous: false
   });
 
@@ -112,12 +113,12 @@ export function PlaylistProvider({
   // Only sync from initialPlaylist when it changes substantially (like after a re-import)
   useEffect(() => {
     if (hasInitialSync.current) {
-        // If we already have data, only update if the initialPlaylist version is actually different
-        // For simplicity, we sync it, but we also call router.refresh() in actions to keep them in sync
-        setChannels(initialPlaylist.channels);
-        setGroupOrder(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
-        setHiddenGroups(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
-        setHiddenChannels(initialPlaylist.hiddenChannels ? JSON.parse(initialPlaylist.hiddenChannels) : []);
+      // If we already have data, only update if the initialPlaylist version is actually different
+      // For simplicity, we sync it, but we also call router.refresh() in actions to keep them in sync
+      setChannels(initialPlaylist.channels);
+      setGroupOrder(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
+      setHiddenGroups(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
+      setHiddenChannels(initialPlaylist.hiddenChannels ? JSON.parse(initialPlaylist.hiddenChannels) : []);
     }
     hasInitialSync.current = true;
   }, [initialPlaylist.id, initialPlaylist.updatedAt]); // Assuming there is an updatedAt or just ID
@@ -132,22 +133,22 @@ export function PlaylistProvider({
   const allGroupsInOrder = useMemo(() => {
     const seen = new Set<string>();
     const orderInFile: string[] = [];
-    
+
     channels.forEach(c => {
-        const title = c.groupTitle || '未分类';
-        if (!seen.has(title)) {
-            seen.add(title);
-            orderInFile.push(title);
-        }
+      const title = c.groupTitle || '未分类';
+      if (!seen.has(title)) {
+        seen.add(title);
+        orderInFile.push(title);
+      }
     });
 
     let result: string[] = [];
     if (groupOrder.length > 0) {
-        const ordered = groupOrder.filter(name => seen.has(name));
-        const remaining = orderInFile.filter(name => !ordered.includes(name));
-        result = [...ordered, ...remaining];
+      const ordered = groupOrder.filter(name => seen.has(name));
+      const remaining = orderInFile.filter(name => !ordered.includes(name));
+      result = [...ordered, ...remaining];
     } else {
-        result = orderInFile;
+      result = orderInFile;
     }
     return result;
   }, [channels, groupOrder]);
@@ -168,9 +169,9 @@ export function PlaylistProvider({
     const totalChannels = channels.length;
     const totalGroups = sortableGroups.length;
     const hiddenGroupsCount = hiddenGroups.length;
-    
+
     // Count channels that are EITHER in a hidden group OR individually hidden
-    const hiddenChannelsCount = channels.filter(c => 
+    const hiddenChannelsCount = channels.filter(c =>
       hiddenGroups.includes(c.groupTitle || '未分类') || hiddenChannels.includes(c.id)
     ).length;
 
@@ -180,10 +181,10 @@ export function PlaylistProvider({
   const filteredChannels = useMemo(() => {
     let res = [...channels].sort((a, b) => a.order - b.order);
     if (selectedGroup !== '全部') {
-       res = res.filter(c => (c.groupTitle || '未分类') === selectedGroup);
+      res = res.filter(c => (c.groupTitle || '未分类') === selectedGroup);
     }
     if (channelSearch) {
-       res = res.filter(c => c.name.toLowerCase().includes(channelSearch.toLowerCase()));
+      res = res.filter(c => c.name.toLowerCase().includes(channelSearch.toLowerCase()));
     }
     return res;
   }, [channels, selectedGroup, channelSearch]);
@@ -193,29 +194,29 @@ export function PlaylistProvider({
   const handleCreateGroup = () => {
     const name = prompt("输入新分组名称:");
     if (!name) return;
-    
-    fetch(`/api/playlist/${initialPlaylist.id}/channel`, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ 
-            name: '新频道', 
-            url: 'http://', 
-            groupTitle: name
-        }) 
+
+    fetch(`/api/playlist/${initialPlaylist.id}/channel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: '新频道',
+        url: 'http://',
+        groupTitle: name
+      })
     })
-    .then(res => {
+      .then(res => {
         if (!res.ok) throw new Error('Failed to create channel');
         return res.json();
-    })
-    .then(data => { 
+      })
+      .then(data => {
         setChannels(prev => {
-            if (prev.some(c => c.id === data.id)) return prev;
-            return [...prev, data];
-        }); 
-        setSelectedGroup(name); 
+          if (prev.some(c => c.id === data.id)) return prev;
+          return [...prev, data];
+        });
+        setSelectedGroup(name);
         router.refresh();
-    })
-    .catch(err => alert(err.message));
+      })
+      .catch(err => alert(err.message));
   };
 
   const handleAddChannel = async (newChannel: Omit<Channel, 'id' | 'playlistId' | 'order' | 'createdAt' | 'updatedAt' | 'duration'>) => {
@@ -225,17 +226,17 @@ export function PlaylistProvider({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newChannel)
       });
-      
+
       if (!res.ok) throw new Error('Failed to create channel');
-      
+
       const createdChannel = await res.json();
-      
+
       setChannels(prev => [...prev, createdChannel]);
       setIsAddingChannel(false);
       router.refresh();
-      
+
       if (createdChannel.groupTitle && createdChannel.groupTitle !== selectedGroup && selectedGroup !== '全部') {
-           // Optionally switch view or just notify
+        // Optionally switch view or just notify
       }
     } catch (error) {
       console.error(error);
@@ -247,31 +248,31 @@ export function PlaylistProvider({
     const oldIdx = sortableGroups.indexOf(activeId);
     const newIdx = sortableGroups.indexOf(overId);
     if (oldIdx !== -1 && newIdx !== -1) {
-        const newOrder = arrayMove(sortableGroups, oldIdx, newIdx);
-        setGroupOrder(newOrder);
-        fetch(`/api/playlist/${initialPlaylist.id}/group-order`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ groupOrder: newOrder })
-        }).then(() => router.refresh());
+      const newOrder = arrayMove(sortableGroups, oldIdx, newIdx);
+      setGroupOrder(newOrder);
+      fetch(`/api/playlist/${initialPlaylist.id}/group-order`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupOrder: newOrder })
+      }).then(() => router.refresh());
     }
   };
 
   const handleReorderChannels = (activeId: number, overId: number) => {
     const oldIndex = channels.findIndex(c => c.id === activeId);
     const newIndex = channels.findIndex(c => c.id === overId);
-    
+
     if (oldIndex !== -1 && newIndex !== -1) {
-        const moved = arrayMove(channels, oldIndex, newIndex);
-        // Optimistically update order based on new index to prevent UI snapping back
-        const reordered = moved.map((c, idx) => ({ ...c, order: idx }));
-        
-        setChannels(reordered);
-        fetch(`/api/playlist/${initialPlaylist.id}/sort`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channelIds: reordered.map(c => c.id) })
-        }).then(() => router.refresh());
+      const moved = arrayMove(channels, oldIndex, newIndex);
+      // Optimistically update order based on new index to prevent UI snapping back
+      const reordered = moved.map((c, idx) => ({ ...c, order: idx }));
+
+      setChannels(reordered);
+      fetch(`/api/playlist/${initialPlaylist.id}/sort`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelIds: reordered.map(c => c.id) })
+      }).then(() => router.refresh());
     }
   };
 
@@ -287,50 +288,50 @@ export function PlaylistProvider({
 
   const handleUpdateChannel = async (updated: Channel) => {
     const res = await fetch(`/api/channel/${updated.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
     });
     if (res.ok) {
-        setChannels(prev => prev.map(c => c.id === updated.id ? updated : c));
-        setEditingChannel(null);
-        router.refresh();
+      setChannels(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setEditingChannel(null);
+      router.refresh();
     }
   };
 
   const handleSingleDelete = (id: number) => {
     setConfirmModal({
-        isOpen: true,
-        title: '确认删除频道',
-        message: '您确定要删除这个频道吗？',
-        isDangerous: true,
-        onConfirm: async () => {
-            closeConfirmModal();
-            setChannels(prev => prev.filter(c => c.id !== id));
-            await fetch(`/api/channel/${id}`, { method: 'DELETE' });
-            router.refresh();
-        }
+      isOpen: true,
+      title: '确认删除频道',
+      message: '您确定要删除这个频道吗？',
+      isDangerous: true,
+      onConfirm: async () => {
+        closeConfirmModal();
+        setChannels(prev => prev.filter(c => c.id !== id));
+        await fetch(`/api/channel/${id}`, { method: 'DELETE' });
+        router.refresh();
+      }
     });
   };
 
   const handleBatchDelete = () => {
     setConfirmModal({
-        isOpen: true,
-        title: '确认批量删除',
-        message: `您确定要删除选中的 ${selectedIds.size} 个频道吗？此操作不可撤销。`,
-        isDangerous: true,
-        onConfirm: async () => {
-            closeConfirmModal();
-            const idsToDelete = Array.from(selectedIds);
-            setChannels(prev => prev.filter(c => !selectedIds.has(c.id)));
-            setSelectedIds(new Set());
-            await fetch('/api/channel/batch', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'delete', ids: idsToDelete })
-            });
-            router.refresh();
-        }
+      isOpen: true,
+      title: '确认批量删除',
+      message: `您确定要删除选中的 ${selectedIds.size} 个频道吗？此操作不可撤销。`,
+      isDangerous: true,
+      onConfirm: async () => {
+        closeConfirmModal();
+        const idsToDelete = Array.from(selectedIds);
+        setChannels(prev => prev.filter(c => !selectedIds.has(c.id)));
+        setSelectedIds(new Set());
+        await fetch('/api/channel/batch', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', ids: idsToDelete })
+        });
+        router.refresh();
+      }
     });
   };
 
@@ -339,50 +340,50 @@ export function PlaylistProvider({
     setChannels(prev => prev.map(c => selectedIds.has(c.id) ? { ...c, groupTitle: targetGroup } : c));
     setSelectedIds(new Set());
     await fetch('/api/channel/batch', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'move', ids: idsToMove, data: { groupTitle: targetGroup } })
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'move', ids: idsToMove, data: { groupTitle: targetGroup } })
     });
     router.refresh();
   };
 
   const handleDeleteGroup = (groupName: string) => {
     setConfirmModal({
-        isOpen: true,
-        title: '确认删除分组',
-        message: `您确定要删除分组 "${groupName}" 吗？该分组下的所有频道将被移动到 "未分类"。`,
-        isDangerous: true,
-        onConfirm: async () => {
-            closeConfirmModal();
-            
-            const channelIdsToMove = channels
-              .filter(c => (c.groupTitle || '未分类') === groupName)
-              .map(c => c.id);
+      isOpen: true,
+      title: '确认删除分组',
+      message: `您确定要删除分组 "${groupName}" 吗？该分组下的所有频道将被移动到 "未分类"。`,
+      isDangerous: true,
+      onConfirm: async () => {
+        closeConfirmModal();
 
-            if (channelIdsToMove.length > 0) {
-                setChannels(prev => prev.map(c => 
-                  channelIdsToMove.includes(c.id) ? { ...c, groupTitle: '' } : c
-                ));
+        const channelIdsToMove = channels
+          .filter(c => (c.groupTitle || '未分类') === groupName)
+          .map(c => c.id);
 
-                await fetch('/api/channel/batch', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                      action: 'move', 
-                      ids: channelIdsToMove, 
-                      data: { groupTitle: '' } 
-                    })
-                });
-            }
+        if (channelIdsToMove.length > 0) {
+          setChannels(prev => prev.map(c =>
+            channelIdsToMove.includes(c.id) ? { ...c, groupTitle: '' } : c
+          ));
 
-            const newOrder = groupOrder.filter(g => g !== groupName);
-            setGroupOrder(newOrder);
-            
-            if (selectedGroup === groupName) {
-                setSelectedGroup('全部');
-            }
-            router.refresh();
+          await fetch('/api/channel/batch', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'move',
+              ids: channelIdsToMove,
+              data: { groupTitle: '' }
+            })
+          });
         }
+
+        const newOrder = groupOrder.filter(g => g !== groupName);
+        setGroupOrder(newOrder);
+
+        if (selectedGroup === groupName) {
+          setSelectedGroup('全部');
+        }
+        router.refresh();
+      }
     });
   };
 
@@ -395,26 +396,26 @@ export function PlaylistProvider({
       .map(c => c.id);
 
     if (channelIdsToMove.length > 0) {
-        setChannels(prev => prev.map(c => 
-          channelIdsToMove.includes(c.id) ? { ...c, groupTitle: newName } : c
-        ));
+      setChannels(prev => prev.map(c =>
+        channelIdsToMove.includes(c.id) ? { ...c, groupTitle: newName } : c
+      ));
 
-        fetch('/api/channel/batch', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              action: 'move', 
-              ids: channelIdsToMove, 
-              data: { groupTitle: newName } 
-            })
-        });
+      fetch('/api/channel/batch', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'move',
+          ids: channelIdsToMove,
+          data: { groupTitle: newName }
+        })
+      });
     }
 
     const newOrder = groupOrder.map(g => g === oldName ? newName : g);
     setGroupOrder(newOrder);
-    
+
     if (selectedGroup === oldName) {
-        setSelectedGroup(newName);
+      setSelectedGroup(newName);
     }
     router.refresh();
   };
@@ -424,12 +425,12 @@ export function PlaylistProvider({
     const newHidden = hiddenGroups.includes(groupName)
       ? hiddenGroups.filter(g => g !== groupName)
       : [...hiddenGroups, groupName];
-    
+
     setHiddenGroups(newHidden);
     fetch(`/api/playlist/${initialPlaylist.id}/hidden-groups`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hiddenGroups: newHidden })
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hiddenGroups: newHidden })
     }).then(() => router.refresh());
   };
 
@@ -437,12 +438,12 @@ export function PlaylistProvider({
     const newHidden = hiddenChannels.includes(channelId)
       ? hiddenChannels.filter(id => id !== channelId)
       : [...hiddenChannels, channelId];
-    
+
     setHiddenChannels(newHidden);
     fetch(`/api/playlist/${initialPlaylist.id}/hidden-channels`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hiddenChannels: newHidden })
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hiddenChannels: newHidden })
     }).then(() => router.refresh());
   };
 
@@ -460,7 +461,7 @@ export function PlaylistProvider({
     isSortingGroups,
     isAddingChannel,
     isDuplicateModalOpen,
-    
+
     allExistingGroupNames,
     orderedGroupNames,
     sortableGroups,
@@ -475,7 +476,7 @@ export function PlaylistProvider({
     setIsAddingChannel,
     setIsDuplicateModalOpen,
     setSelectedIds,
-    
+
     handleCreateGroup,
     handleAddChannel,
     handleReorderGroups,
@@ -484,7 +485,7 @@ export function PlaylistProvider({
     handleSelectAll,
     handleDeselectAll,
     handleToggleHideChannel,
-    
+
     handleUpdateChannel,
     handleSingleDelete,
     handleBatchDelete,
@@ -492,7 +493,7 @@ export function PlaylistProvider({
     handleRenameGroup,
     handleDeleteGroup,
     handleToggleHideGroup,
-    
+
     confirmModal,
     closeConfirmModal
   };

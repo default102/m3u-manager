@@ -1,49 +1,38 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { parse } from 'iptv-playlist-parser';
+import { parseM3UContent, fetchM3UFromUrl } from '@/lib/services/m3uParser';
+import type { ImportPlaylistRequest } from '@/types';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body: ImportPlaylistRequest = await request.json();
     const { name, content, url } = body;
 
     let m3uContent = content;
 
+    // Fetch from URL if provided and no content
     if (url && !content) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch M3U URL');
-      m3uContent = await res.text();
+      m3uContent = await fetchM3UFromUrl(url);
     }
 
     if (!m3uContent) {
       return NextResponse.json({ error: 'No content provided' }, { status: 400 });
     }
 
-    const parsed = parse(m3uContent);
-    
-    // Create Playlist and Channels
-    // Using a transaction is better if strict, but simple create is fine here.
+    // Parse M3U content
+    const channels = parseM3UContent(m3uContent);
+
+    // Create Playlist and Channels in database
     const playlist = await prisma.playlist.create({
       data: {
         name: name || 'Untitled Playlist',
         url: url || null,
         channels: {
-          create: parsed.items.map((item: any, index: number) => {
-            const name = item.name?.trim() || '';
-            const tvgName = item.tvg?.name?.trim() || '';
-            const tvgId = item.tvg?.id?.trim() || '';
-            
-            return {
-              name: name,
-              url: item.url?.trim() || '',
-              tvgId: tvgId === name ? '' : tvgId,
-              tvgName: tvgName === name ? '' : tvgName,
-              tvgLogo: item.tvg?.logo?.trim() || '',
-              groupTitle: item.group?.title?.trim() || '',
-              duration: -1,
-              order: index
-            };
-          })
+          create: channels.map((channel, index) => ({
+            ...channel,
+            duration: -1,
+            order: index
+          }))
         }
       }
     });
@@ -51,7 +40,10 @@ export async function POST(request: Request) {
     return NextResponse.json(playlist);
   } catch (error) {
     console.error('Import Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
 

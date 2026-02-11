@@ -8,3 +8,10 @@ README.md
 .github
 *.local
 .DS_Store
+*.db
+*.sqlite
+*.log
+*.tsbuildinfo
+data/
+.vscode
+.idea
