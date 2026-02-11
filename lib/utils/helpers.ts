@@ -45,3 +45,27 @@ export function truncate(str: string, maxLength: number): string {
 export function getExportUrl(baseUrl: string, playlistId: number): string {
     return `${baseUrl}/api/export/${playlistId}`;
 }
+
+/**
+ * Format date to compact format YYYYMMDD
+ */
+export function formatDateCompact(date?: string | Date): string {
+    const d = date ? new Date(date) : new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
+}
+
+/**
+ * Generate M3U download filename
+ * @param playlistName - Playlist name
+ * @param isFull - Whether to include hidden content (full version)
+ */
+export function getM3UFilename(playlistName: string, isFull: boolean = false): string {
+    const dateStr = formatDateCompact();
+    const versionLabel = isFull ? '完整版' : '当前版';
+    // Sanitize filename
+    const safeName = playlistName.replace(/[<>:"/\\|?*]/g, '_');
+    return `${safeName}_${dateStr}_${versionLabel}.m3u`;
+}

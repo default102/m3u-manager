@@ -245,14 +245,40 @@ export default function Home() {
                     >
                       <RefreshCw size={20} />
                     </button>
-                    <a
-                      href={`/api/export/${playlist.id}`}
-                      target="_blank"
-                      className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all active:scale-95"
-                      title="下载 M3U 文件"
-                    >
-                      <Download size={20} />
-                    </a>
+
+                    {/* 下载按钮（下拉菜单） */}
+                    <div className="relative group">
+                      <button
+                        className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all active:scale-95"
+                        title="下载 M3U 文件"
+                      >
+                        <Download size={20} />
+                      </button>
+
+                      {/* 下拉选项 */}
+                      <div className="absolute hidden group-hover:block right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-10">
+                        <a
+                          href={`/api/export/${playlist.id}?full=false&download=true`}
+                          className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Download className="w-3.5 h-3.5" />
+                            <span>当前版本</span>
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5 ml-5">排除隐藏内容</div>
+                        </a>
+                        <a
+                          href={`/api/export/${playlist.id}?full=true&download=true`}
+                          className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Download className="w-3.5 h-3.5" />
+                            <span>完整版</span>
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5 ml-5">包含隐藏内容</div>
+                        </a>
+                      </div>
+                    </div>
                     <button
                       onClick={() => handleDelete(playlist.id)}
                       className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95"
