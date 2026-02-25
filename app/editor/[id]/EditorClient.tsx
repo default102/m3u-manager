@@ -15,12 +15,13 @@ import { DuplicateCheckModal } from '@/components/editor/DuplicateCheckModal';
 function EditorContent() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [mounted, setMounted] = useState(false);
-  
-  const { 
-    editingChannel, 
-    allExistingGroupNames, 
+
+  const {
+    editingChannel,
+    allExistingGroupNames,
+    allChannelUrls,
     orderedGroupNames,
-    setEditingChannel, 
+    setEditingChannel,
     handleUpdateChannel,
     confirmModal,
     closeConfirmModal,
@@ -44,35 +45,37 @@ function EditorContent() {
       {showSidebar && <CategorySidebar onSelect={() => setShowSidebar(false)} />}
 
       <div className={`flex-1 flex flex-col overflow-hidden bg-slate-50/30 ${showSidebar ? 'hidden md:flex' : 'flex'}`}>
-         <EditorHeader showSidebar={showSidebar} onToggleSidebar={() => setShowSidebar(!showSidebar)} />
-         <ChannelList />
+        <EditorHeader showSidebar={showSidebar} onToggleSidebar={() => setShowSidebar(!showSidebar)} />
+        <ChannelList />
       </div>
 
       {editingChannel && (
-        <EditChannelModal 
-            isOpen={!!editingChannel}
-            channel={editingChannel} 
-            allGroups={allExistingGroupNames} 
-            onClose={() => setEditingChannel(null)} 
-            onUpdate={handleUpdateChannel} 
+        <EditChannelModal
+          isOpen={!!editingChannel}
+          channel={editingChannel}
+          allGroups={allExistingGroupNames}
+          allChannelUrls={allChannelUrls}
+          onClose={() => setEditingChannel(null)}
+          onUpdate={handleUpdateChannel}
         />
       )}
 
       {isAddingChannel && (
-        <AddChannelModal 
-            isOpen={isAddingChannel}
-            allGroups={orderedGroupNames} 
-            onClose={() => setIsAddingChannel(false)} 
-            onAdd={handleAddChannel} 
+        <AddChannelModal
+          isOpen={isAddingChannel}
+          allGroups={orderedGroupNames}
+          allChannelUrls={allChannelUrls}
+          onClose={() => setIsAddingChannel(false)}
+          onAdd={handleAddChannel}
         />
       )}
 
-      <DuplicateCheckModal 
+      <DuplicateCheckModal
         isOpen={isDuplicateModalOpen}
         onClose={() => setIsDuplicateModalOpen(false)}
       />
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
         message={confirmModal.message}
@@ -88,10 +91,10 @@ export default function EditorClient({ playlist }: { playlist: Playlist }) {
   return (
     <PlaylistProvider initialPlaylist={playlist}>
       <div className="h-screen flex flex-col bg-white overflow-hidden">
-         <GlobalHeader playlistName={playlist.name} />
-         <main className="flex-1 overflow-hidden relative">
-            <EditorContent />
-         </main>
+        <GlobalHeader playlistName={playlist.name} />
+        <main className="flex-1 overflow-hidden relative">
+          <EditorContent />
+        </main>
       </div>
     </PlaylistProvider>
   );

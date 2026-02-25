@@ -24,6 +24,7 @@ interface PlaylistContextType {
 
   // Derived State
   allExistingGroupNames: string[];
+  allChannelUrls: string[];
   orderedGroupNames: string[];
   sortableGroups: string[];
   filteredChannels: Channel[];
@@ -129,6 +130,11 @@ export function PlaylistProvider({
     const names = new Set(channels.map(c => c.groupTitle || '未分类'));
     return Array.from(names).filter(n => n !== '未分类').sort();
   }, [channels]);
+
+  const allChannelUrls = useMemo(() => {
+    return channels.map(c => c.url).filter(Boolean);
+  }, [channels]);
+
 
   const allGroupsInOrder = useMemo(() => {
     const seen = new Set<string>();
@@ -463,6 +469,7 @@ export function PlaylistProvider({
     isDuplicateModalOpen,
 
     allExistingGroupNames,
+    allChannelUrls,
     orderedGroupNames,
     sortableGroups,
     filteredChannels,

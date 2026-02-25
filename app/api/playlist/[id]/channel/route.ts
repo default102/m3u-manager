@@ -19,11 +19,17 @@ export async function POST(
     }
 
     // Get the current highest order to append to the end
-    const lastChannel = await prisma.channel.findFirst({
-      where: { playlistId },
-      orderBy: { order: 'desc' },
-      select: { order: true }
-    });
+    const [lastChannel, playlist] = await Promise.all([
+      prisma.channel.findFirst({
+        where: { playlistId },
+        orderBy: { order: 'desc' },
+        select: { order: true }
+      }),
+      prisma.playlist.findUnique({
+        where: { id: playlistId },
+        select: { groupOrder: true }
+      })
+    ]);
 
     const newOrder = (lastChannel?.order ?? -1) + 1;
 
@@ -39,6 +45,21 @@ export async function POST(
         playlistId
       }
     });
+
+    // 如果新频道的分组不在 groupOrder 中，则追加
+    if (groupTitle) {
+      const currentGroupOrder: string[] = playlist?.groupOrder
+        ? JSON.parse(playlist.groupOrder)
+        : [];
+
+      if (!currentGroupOrder.includes(groupTitle)) {
+        const newGroupOrder = [...currentGroupOrder, groupTitle];
+        await prisma.playlist.update({
+          where: { id: playlistId },
+          data: { groupOrder: JSON.stringify(newGroupOrder) }
+        });
+      }
+    }
 
     return NextResponse.json(channel);
   } catch (error) {
