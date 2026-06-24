@@ -12,39 +12,39 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# 合并 Prisma 生成和构建命令
 RUN npx prisma generate && npm run build
+
+# 集中整理归拢运行时产物
+RUN mkdir -p /app/out && \
+    cp -r /app/public /app/out/public && \
+    cp -r /app/.next/standalone/. /app/out/ && \
+    mkdir -p /app/out/.next && \
+    cp -r /app/.next/static /app/out/.next/static && \
+    cp -r /app/prisma /app/out/prisma && \
+    mkdir -p /app/out/node_modules && \
+    cp -r /app/node_modules/prisma /app/out/node_modules/prisma && \
+    cp -r /app/node_modules/@prisma /app/out/node_modules/@prisma
 
 # 3. 运行环境
 FROM base AS runner
 WORKDIR /app
 
-# 合并所有环境变量为一层
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME="0.0.0.0" \
     DATABASE_URL="file:/app/data/db.sqlite"
 
-# 合并所有系统操作为一层（安装依赖、创建用户、创建目录）
 RUN apk add --no-cache openssl sqlite && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     mkdir -p /app/data/backups && \
     chown -R nextjs:nodejs /app/data
 
-# 复制构建产物
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# 复制 Prisma 文件
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+# 仅单次 COPY，物理层数减少 5 层
+COPY --from=builder --chown=nextjs:nodejs /app/out ./
 
 USER nextjs
-
 EXPOSE 3000
 
 # 直接使用 node 运行 prisma 脚本，绕过可能失效的 .bin 软链接
