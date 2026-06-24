@@ -284,3 +284,150 @@ export async function sanitizeChannelNames(channels: { id: number; name: string 
     throw new Error(`Failed to parse AI response: ${error.message}. Raw response: ${content}`);
   }
 }
+
+export interface AIEPGResponse {
+  channelId: number;
+  tvgId: string;
+  tvgName: string;
+  tvgLogo: string;
+}
+
+export async function guessChannelEPG(channels: { id: number; name: string }[]): Promise<AIEPGResponse[]> {
+  const baseUrl = process.env.OPENAI_API_BASE_URL;
+  const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL;
+
+  if (!baseUrl || !apiKey || !model) {
+    throw new Error('AI configuration is missing. Please check your .env file.');
+  }
+
+  const systemPrompt = `你是一个专业的 IPTV 频道台标与 EPG (电子节目单) 匹配助手。
+我会提供给你一组频道（包含 ID 和名称），你需要帮我识别出这些频道对应的标准 EPG ID、标准台标 URL 和标准频道简称。
+规则要求：
+1. 分析频道名称，去掉噪音（如 [电信]、[IPv6]、高清、超高清等），识别出具体的频道简称。
+2. 推荐的标准台标 URL 应使用稳定高质量的公共图片地址，你必须使用以下模板前缀（FanMingMing 台标 CDN）并拼接对应的文件名：
+   模板格式为：https://live.fanmingming.com/tv/台标文件名.png
+   例如：
+   - CCTV-1 综合频道 -> EPG ID 为 "CCTV1"，简称为 "CCTV-1 综合"，台标文件名为 "CCTV1.png"，完整台标 URL 为 "https://live.fanmingming.com/tv/CCTV1.png"
+   - 湖南卫视高清 -> EPG ID 为 "湖南卫视"，简称为 "湖南卫视"，台标文件名为 "湖南卫视.png"，完整台标 URL 为 "https://live.fanmingming.com/tv/湖南卫视.png"
+   - HBO 电影台 -> EPG ID 为 "HBO"，简称为 "HBO"，台标为 "https://live.fanmingming.com/tv/HBO.png" （如果台标库没有，可以使用你认为合法的第三方台标图片 URL，或保持原样）。
+3. 必须返回合法的 JSON 格式。
+4. 根节点必须是一个包含 items 数组的对象，数组的每个元素包含 channelId, tvgId, tvgName, tvgLogo。
+例如：
+输入：
+[{"id":1, "name":"CCTV-1 综合 [电信]"}, {"id":2, "name":"湖南卫视HD (IPV6)"}]
+输出：
+{"items": [
+  {"channelId":1, "tvgId":"CCTV1", "tvgName":"CCTV-1 综合", "tvgLogo":"https://live.fanmingming.com/tv/CCTV1.png"},
+  {"channelId":2, "tvgId":"湖南卫视", "tvgName":"湖南卫视", "tvgLogo":"https://live.fanmingming.com/tv/湖南卫视.png"}
+]}
+`;
+
+  const userContent = JSON.stringify(channels.map(c => ({ id: c.id, name: c.name })));
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  let response;
+  try {
+    const endpoint = baseUrl.endsWith('/') ? `${baseUrl}chat/completions` : `${baseUrl}/chat/completions`;
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent }
+        ],
+        stream: true,
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+        chat_template_kwargs: {
+          enable_thinking: false
+        }
+      }),
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`AI API Error (${response.status}): ${text}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error('No response body returned from AI model.');
+  }
+
+  const decoder = new TextDecoder('utf-8');
+  let content = '';
+  let done = false;
+  let buffer = '';
+
+  while (!done) {
+    const { value, done: doneReading } = await reader.read();
+    done = doneReading;
+    if (value) {
+      buffer += decoder.decode(value, { stream: !done });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed.startsWith('data: ')) {
+          const dataStr = trimmed.slice(6);
+          if (dataStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(dataStr);
+            const delta = parsed.choices?.[0]?.delta?.content || '';
+            content += delta;
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+    }
+  }
+
+  if (buffer.trim()) {
+    const trimmed = buffer.trim();
+    if (trimmed.startsWith('data: ')) {
+      const dataStr = trimmed.slice(6);
+      if (dataStr !== '[DONE]') {
+        try {
+          const parsed = JSON.parse(dataStr);
+          content += parsed.choices?.[0]?.delta?.content || '';
+        } catch (e) {}
+      }
+    }
+  }
+
+  if (!content) {
+    throw new Error('No content returned from AI model.');
+  }
+
+  try {
+    const cleanedContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanedContent);
+    
+    if (parsed.items && Array.isArray(parsed.items)) {
+      return parsed.items;
+    } else if (Array.isArray(parsed)) {
+      return parsed;
+    } else {
+      const arrayVal = Object.values(parsed).find(Array.isArray);
+      if (arrayVal) return arrayVal as AIEPGResponse[];
+      throw new Error('Returned JSON does not contain an items array.');
+    }
+  } catch (error: any) {
+    throw new Error(`Failed to parse AI response: ${error.message}. Raw response: ${content}`);
+  }
+}

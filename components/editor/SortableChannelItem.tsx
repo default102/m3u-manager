@@ -1,6 +1,6 @@
 'use client';
 
-import { GripVertical, Edit2, Trash2, CheckSquare, Square, Eye, EyeOff, Play } from 'lucide-react';
+import { GripVertical, Edit2, Trash2, CheckSquare, Square, Eye, EyeOff } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Channel } from '@/types';
@@ -15,7 +15,6 @@ interface Props {
   onDelete: (id: number) => void;
   onToggleSelect: (id: number) => void;
   onToggleHide: (id: number) => void;
-  onPlayPreview?: (c: Channel) => void;
 }
 
 export function SortableChannelItem({ 
@@ -27,7 +26,6 @@ export function SortableChannelItem({
     isHidden,
     onToggleSelect,
     onToggleHide,
-    onPlayPreview,
     isAllView
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -74,15 +72,6 @@ export function SortableChannelItem({
       </div>
 
       <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all px-2">
-         {onPlayPreview && (
-           <button 
-             onClick={() => onPlayPreview(channel)} 
-             className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 rounded-lg transition-all active:scale-90"
-             title="播放预览"
-           >
-             <Play size={16} />
-           </button>
-         )}
          <button 
            onClick={() => onToggleHide(channel.id)} 
            className={`inline-flex items-center justify-center p-2 rounded-lg transition-all active:scale-90 ${isHidden ? 'text-blue-600 bg-blue-100' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-100'}`}

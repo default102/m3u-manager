@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Download, Plus, Copy, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, Plus, Copy } from 'lucide-react';
 import { usePlaylist } from '@/components/editor/PlaylistContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useState, useEffect } from 'react';
 
 export function GlobalHeader({ playlistName }: { playlistName: string }) {
-  const { stats, setIsAddingChannel, setIsDuplicateModalOpen, playlistId, handleAutoMatchEPG, isEPGMatching } = usePlaylist();
+  const { stats, setIsAddingChannel, setIsDuplicateModalOpen, playlistId } = usePlaylist();
   const [openDownloadMenu, setOpenDownloadMenu] = useState(false);
 
   // 点击外部关闭下载菜单
@@ -65,15 +65,6 @@ export function GlobalHeader({ playlistName }: { playlistName: string }) {
           title="检查重复频道"
         >
           <Copy size={16} /> <span className="hidden sm:inline">查重</span>
-        </button>
-
-        <button
-          onClick={handleAutoMatchEPG}
-          className="flex items-center gap-1.5 bg-purple-50 text-purple-600 border border-purple-100 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-bold hover:bg-purple-100 transition-all active:scale-95 shrink-0 shadow-sm whitespace-nowrap"
-          title="智能匹配台标与EPG"
-          disabled={isEPGMatching}
-        >
-          <Sparkles size={16} /> <span className="hidden sm:inline">匹配台标/EPG</span>
         </button>
 
         {/* 下载按钮（下拉菜单） */}

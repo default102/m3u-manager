@@ -31,20 +31,6 @@ export async function PATCH(request: Request) {
         })
       );
       await Promise.all(promises);
-    } else if (action === 'updateEPG') {
-      // 批量独立更新台标和EPG
-      const updates = data.updates;
-      const promises = updates.map((u: any) =>
-        prisma.channel.update({
-          where: { id: u.id },
-          data: {
-            tvgId: u.tvgId ?? null,
-            tvgName: u.tvgName ?? null,
-            tvgLogo: u.tvgLogo ?? null
-          }
-        })
-      );
-      await Promise.all(promises);
     }
 
     return NextResponse.json({ success: true });
