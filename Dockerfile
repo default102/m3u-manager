@@ -21,9 +21,8 @@ RUN mkdir -p /app/out && \
     mkdir -p /app/out/.next && \
     cp -r /app/.next/static /app/out/.next/static && \
     cp -r /app/prisma /app/out/prisma && \
-    mkdir -p /app/out/node_modules && \
-    cp -r /app/node_modules/prisma /app/out/node_modules/prisma && \
-    cp -r /app/node_modules/@prisma /app/out/node_modules/@prisma
+    cp -r /app/node_modules/prisma /app/out/node_modules/ && \
+    cp -r /app/node_modules/@prisma /app/out/node_modules/
 
 # 3. 运行环境
 FROM base AS runner
