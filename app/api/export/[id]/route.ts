@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getM3UFilename } from '@/lib/utils/helpers';
+import { getM3UFilename, safeJsonParse } from '@/lib/utils/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,8 +34,8 @@ export async function GET(
 
   if (!isFull) {
     // 当前版本：过滤隐藏的分组和频道
-    const hiddenGroups = playlist.hiddenGroups ? JSON.parse(playlist.hiddenGroups) as string[] : [];
-    const hiddenChannels = playlist.hiddenChannels ? JSON.parse(playlist.hiddenChannels) as (string | number)[] : [];
+    const hiddenGroups = safeJsonParse<string[]>(playlist.hiddenGroups, []);
+    const hiddenChannels = safeJsonParse<(string | number)[]>(playlist.hiddenChannels, []);
     const hiddenChannelIds = new Set(hiddenChannels.map(id => id.toString()));
 
     sortedChannels = playlist.channels.filter(c =>
@@ -46,7 +46,7 @@ export async function GET(
 
   // 按分组顺序排序
   if (playlist.groupOrder) {
-    const groupOrder = JSON.parse(playlist.groupOrder) as string[];
+    const groupOrder = safeJsonParse<string[]>(playlist.groupOrder, []);
     sortedChannels.sort((a, b) => {
       const groupA = a.groupTitle || '未分类';
       const groupB = b.groupTitle || '未分类';

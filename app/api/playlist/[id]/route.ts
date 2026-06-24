@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { parse } from 'iptv-playlist-parser';
+import { fetchM3UFromUrl } from '@/lib/services/m3uParser';
 
 export async function GET(
   request: Request,
@@ -35,11 +36,9 @@ export async function PUT(
 
   if (url && !content) {
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch M3U URL');
-        m3uContent = await res.text();
-      } catch (e) {
-          return NextResponse.json({ error: 'Failed to fetch URL' }, { status: 400 });
+        m3uContent = await fetchM3UFromUrl(url);
+      } catch (e: any) {
+          return NextResponse.json({ error: e.message || 'Failed to fetch URL' }, { status: 400 });
       }
   }
 
@@ -50,37 +49,49 @@ export async function PUT(
   const parsed = parse(m3uContent);
 
   try {
-      // 使用事务：先删除旧频道，再插入新频道
-      await prisma.$transaction([
-          prisma.channel.deleteMany({ where: { playlistId } }),
-          prisma.playlist.update({
+      await prisma.$transaction(async (tx) => {
+          // 1. 删除旧频道
+          await tx.channel.deleteMany({ where: { playlistId } });
+          
+          // 2. 更新播放列表元数据并清空旧配置（url 有传则更新，否则 undefined 保持不变）
+          await tx.playlist.update({
               where: { id: playlistId },
               data: {
-                  url: url || undefined,
-                  groupOrder: null, // 关键：重置分组顺序
-                  hiddenGroups: null, // 同时重置隐藏状态
-                  hiddenChannels: null, // 重置隐藏频道状态
-                  channels: {
-                      create: parsed.items.map((item: any, index: number) => {
-                          const name = item.name?.trim() || '';
-                          const tvgName = item.tvg?.name?.trim() || '';
-                          const tvgId = item.tvg?.id?.trim() || '';
-                          
-                          return {
-                              name: name,
-                              url: item.url?.trim() || '',
-                              tvgId: tvgId === name ? '' : tvgId,
-                              tvgName: tvgName === name ? '' : tvgName,
-                              tvgLogo: item.tvg?.logo?.trim() || '',
-                              groupTitle: item.group?.title?.trim() || '',
-                              duration: -1,
-                              order: index
-                          };
-                      })
-                  }
+                  url: url ? url : undefined,
+                  groupOrder: null,
+                  hiddenGroups: null,
+                  hiddenChannels: null
               }
-          })
-      ]);
+          });
+
+          // 3. 构建新频道数据
+          const channelsData = parsed.items.map((item: any, index: number) => {
+              const name = item.name?.trim() || '';
+              const tvgName = item.tvg?.name?.trim() || '';
+              const tvgId = item.tvg?.id?.trim() || '';
+              
+              return {
+                  name: name,
+                  url: item.url?.trim() || '',
+                  tvgId: tvgId === name ? null : (tvgId || null),
+                  tvgName: tvgName === name ? null : (tvgName || null),
+                  tvgLogo: item.tvg?.logo?.trim() || null,
+                  groupTitle: item.group?.title?.trim() || null,
+                  duration: -1,
+                  order: index,
+                  playlistId: playlistId
+              };
+          });
+
+          // 4. 分批写入，每批 500 条
+          const chunkSize = 500;
+          for (let i = 0; i < channelsData.length; i += chunkSize) {
+              const chunk = channelsData.slice(i, i + chunkSize);
+              await tx.channel.createMany({
+                  data: chunk
+              });
+          }
+      });
       return NextResponse.json({ success: true });
   } catch (error) {
       console.error(error);

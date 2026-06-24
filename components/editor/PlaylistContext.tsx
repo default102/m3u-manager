@@ -5,6 +5,7 @@ import { Channel, Playlist } from '@/types';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS, DEFAULTS, MESSAGES } from '@/lib/constants';
+import { safeJsonParse } from '@/lib/utils/helpers';
 
 interface PlaylistContextType {
   // State
@@ -21,6 +22,11 @@ interface PlaylistContextType {
   isSortingGroups: boolean;
   isAddingChannel: boolean;
   isDuplicateModalOpen: boolean;
+  isAILoading: boolean;
+  aiRecommendations: any[] | null;
+  setAiRecommendations: (val: any[] | null) => void;
+  aiSanitizedNames: any[] | null;
+  setAiSanitizedNames: (val: any[] | null) => void;
 
   // Derived State
   allExistingGroupNames: string[];
@@ -60,6 +66,10 @@ interface PlaylistContextType {
   handleSingleDelete: (id: number) => void;
   handleBatchDelete: () => void;
   handleBatchMove: (targetGroup: string) => Promise<void>;
+  handleRequestAIGroup: () => Promise<void>;
+  handleApplyAIGroup: (updates: { id: number, groupTitle: string }[]) => Promise<void>;
+  handleRequestAISanitize: () => Promise<void>;
+  handleApplyAISanitize: (updates: { id: number, name: string }[]) => Promise<void>;
   handleRenameGroup: (oldName: string) => void;
   handleDeleteGroup: (groupName: string) => void;
   handleToggleHideGroup: (groupName: string) => void;
@@ -86,9 +96,9 @@ export function PlaylistProvider({
 }) {
   const router = useRouter();
   const [channels, setChannels] = useState<Channel[]>(initialPlaylist.channels);
-  const [groupOrder, setGroupOrder] = useState<string[]>(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
-  const [hiddenGroups, setHiddenGroups] = useState<string[]>(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
-  const [hiddenChannels, setHiddenChannels] = useState<number[]>(initialPlaylist.hiddenChannels ? JSON.parse(initialPlaylist.hiddenChannels) : []);
+  const [groupOrder, setGroupOrder] = useState<string[]>(safeJsonParse<string[]>(initialPlaylist.groupOrder, []));
+  const [hiddenGroups, setHiddenGroups] = useState<string[]>(safeJsonParse<string[]>(initialPlaylist.hiddenGroups, []));
+  const [hiddenChannels, setHiddenChannels] = useState<number[]>(safeJsonParse<number[]>(initialPlaylist.hiddenChannels, []));
   const [selectedGroup, setSelectedGroup] = useState<string>('全部');
   const [groupSearch, setGroupSearch] = useState('');
   const [channelSearch, setChannelSearch] = useState('');
@@ -97,6 +107,10 @@ export function PlaylistProvider({
   const [isAddingChannel, setIsAddingChannel] = useState(false);
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [aiRecommendations, setAiRecommendations] = useState<any[] | null>(null);
+  const [aiSanitizedNames, setAiSanitizedNames] = useState<any[] | null>(null);
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -117,9 +131,9 @@ export function PlaylistProvider({
       // If we already have data, only update if the initialPlaylist version is actually different
       // For simplicity, we sync it, but we also call router.refresh() in actions to keep them in sync
       setChannels(initialPlaylist.channels);
-      setGroupOrder(initialPlaylist.groupOrder ? JSON.parse(initialPlaylist.groupOrder) : []);
-      setHiddenGroups(initialPlaylist.hiddenGroups ? JSON.parse(initialPlaylist.hiddenGroups) : []);
-      setHiddenChannels(initialPlaylist.hiddenChannels ? JSON.parse(initialPlaylist.hiddenChannels) : []);
+      setGroupOrder(safeJsonParse<string[]>(initialPlaylist.groupOrder, []));
+      setHiddenGroups(safeJsonParse<string[]>(initialPlaylist.hiddenGroups, []));
+      setHiddenChannels(safeJsonParse<number[]>(initialPlaylist.hiddenChannels, []));
     }
     hasInitialSync.current = true;
   }, [initialPlaylist.id, initialPlaylist.updatedAt]); // Assuming there is an updatedAt or just ID
@@ -353,6 +367,120 @@ export function PlaylistProvider({
     router.refresh();
   };
 
+  const handleRequestAIGroup = async () => {
+    const idsToProcess = Array.from(selectedIds);
+    if (idsToProcess.length === 0) return;
+    setIsAILoading(true);
+    try {
+      const res = await fetch('/api/ai/group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelIds: idsToProcess })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'AI 分组失败');
+      }
+      const data = await res.json();
+      if (data.success && data.results) {
+        setAiRecommendations(data.results);
+      }
+    } catch (error: any) {
+      alert(`AI 智能分组失败: ${error.message}`);
+    } finally {
+      setIsAILoading(false);
+    }
+  };
+
+  const handleApplyAIGroup = async (updates: { id: number, groupTitle: string }[]) => {
+    setIsAILoading(true);
+    try {
+      const res = await fetch('/api/channel/batch', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateGroups',
+          ids: updates.map(u => u.id),
+          data: { updates }
+        })
+      });
+      if (!res.ok) {
+        throw new Error('更新分组失败');
+      }
+      setChannels(prev => prev.map(c => {
+        const matched = updates.find(u => u.id === c.id);
+        if (matched) {
+          return { ...c, groupTitle: matched.groupTitle === '未分类' ? null : matched.groupTitle };
+        }
+        return c;
+      }));
+      setSelectedIds(new Set());
+      setAiRecommendations(null);
+      router.refresh();
+    } catch (error: any) {
+      alert(`应用分组失败: ${error.message}`);
+    } finally {
+      setIsAILoading(false);
+    }
+  };
+
+  const handleRequestAISanitize = async () => {
+    const idsToProcess = Array.from(selectedIds);
+    if (idsToProcess.length === 0) return;
+    setIsAILoading(true);
+    try {
+      const res = await fetch('/api/ai/sanitize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelIds: idsToProcess })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'AI 命名清洗失败');
+      }
+      const data = await res.json();
+      if (data.success && data.results) {
+        setAiSanitizedNames(data.results);
+      }
+    } catch (error: any) {
+      alert(`AI 智能命名清洗失败: ${error.message}`);
+    } finally {
+      setIsAILoading(false);
+    }
+  };
+
+  const handleApplyAISanitize = async (updates: { id: number, name: string }[]) => {
+    setIsAILoading(true);
+    try {
+      const res = await fetch('/api/channel/batch', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateNames',
+          ids: updates.map(u => u.id),
+          data: { updates }
+        })
+      });
+      if (!res.ok) {
+        throw new Error('更新频道名称失败');
+      }
+      setChannels(prev => prev.map(c => {
+        const matched = updates.find(u => u.id === c.id);
+        if (matched) {
+          return { ...c, name: matched.name };
+        }
+        return c;
+      }));
+      setSelectedIds(new Set());
+      setAiSanitizedNames(null);
+      router.refresh();
+    } catch (error: any) {
+      alert(`应用名称更新失败: ${error.message}`);
+    } finally {
+      setIsAILoading(false);
+    }
+  };
+
   const handleDeleteGroup = (groupName: string) => {
     setConfirmModal({
       isOpen: true,
@@ -467,6 +595,11 @@ export function PlaylistProvider({
     isSortingGroups,
     isAddingChannel,
     isDuplicateModalOpen,
+    isAILoading,
+    aiRecommendations,
+    setAiRecommendations,
+    aiSanitizedNames,
+    setAiSanitizedNames,
 
     allExistingGroupNames,
     allChannelUrls,
@@ -497,6 +630,10 @@ export function PlaylistProvider({
     handleSingleDelete,
     handleBatchDelete,
     handleBatchMove,
+    handleRequestAIGroup,
+    handleApplyAIGroup,
+    handleRequestAISanitize,
+    handleApplyAISanitize,
     handleRenameGroup,
     handleDeleteGroup,
     handleToggleHideGroup,

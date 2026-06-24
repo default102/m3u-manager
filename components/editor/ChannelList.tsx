@@ -6,6 +6,8 @@ import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, TouchS
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableChannelItem } from './SortableChannelItem';
 import { BatchActionBar } from './BatchActionBar';
+import { AIGroupConfirmModal } from './AIGroupConfirmModal';
+import { AINameConfirmModal } from './AINameConfirmModal';
 
 export function ChannelList() {
   const {
@@ -21,7 +23,10 @@ export function ChannelList() {
     handleToggleSelect,
     handleBatchDelete,
     handleBatchMove,
-    handleToggleHideChannel
+    handleRequestAIGroup,
+    handleRequestAISanitize,
+    handleToggleHideChannel,
+    isAILoading
   } = usePlaylist();
 
   const sensors = useSensors(
@@ -31,6 +36,14 @@ export function ChannelList() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-slate-100 relative">
+         {/* AI Loading Mask */}
+         {isAILoading && (
+           <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center">
+             <div className="w-10 h-10 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin mb-4"></div>
+             <p className="text-sm font-bold text-purple-700">AI 智能分析中，请稍候...</p>
+           </div>
+         )}
+
          <div className="flex-1 overflow-y-auto p-2 md:p-4 custom-scrollbar pb-32">
             <div className="w-full">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => {
@@ -74,9 +87,15 @@ export function ChannelList() {
                 selectedCount={selectedIds.size} 
                 allGroups={orderedGroupNames} 
                 onMove={handleBatchMove} 
+                onAIGroup={handleRequestAIGroup}
+                onAISanitize={handleRequestAISanitize}
                 onDelete={handleBatchDelete} 
              />
          )}
+
+         {/* AI Confirmation Modals */}
+         <AIGroupConfirmModal />
+         <AINameConfirmModal />
     </div>
   );
 }

@@ -21,10 +21,31 @@ export async function PATCH(request: Request) {
       await prisma.channel.deleteMany({
         where: { id: { in: ids } }
       });
+    } else if (action === 'updateGroups') {
+      // 批量独立更新分组
+      const updates = data.updates;
+      const promises = updates.map((u: any) =>
+        prisma.channel.update({
+          where: { id: u.id },
+          data: { groupTitle: u.groupTitle ?? null }
+        })
+      );
+      await Promise.all(promises);
+    } else if (action === 'updateNames') {
+      // 批量独立更新频道名
+      const updates = data.updates;
+      const promises = updates.map((u: any) =>
+        prisma.channel.update({
+          where: { id: u.id },
+          data: { name: u.name }
+        })
+      );
+      await Promise.all(promises);
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Batch operation failed:', error);
     return NextResponse.json({ error: 'Batch operation failed' }, { status: 500 });
   }
 }

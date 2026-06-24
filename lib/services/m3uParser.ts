@@ -50,10 +50,21 @@ export function parseM3UContent(content: string): Omit<CreateChannelRequest, 'du
 /**
  * Fetch M3U content from URL
  */
-export async function fetchM3UFromUrl(url: string): Promise<string> {
-    const res = await fetch(url);
-    if (!res.ok) {
-        throw new Error(`Failed to fetch M3U from URL: ${url}`);
+export async function fetchM3UFromUrl(url: string, timeoutMs: number = 15000): Promise<string> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) {
+            throw new Error(`Failed to fetch M3U from URL: ${url} (Status: ${res.status})`);
+        }
+        return await res.text();
+    } catch (e: any) {
+        if (e.name === 'AbortError') {
+            throw new Error(`Fetch M3U from URL timed out after ${timeoutMs}ms`);
+        }
+        throw e;
+    } finally {
+        clearTimeout(timeoutId);
     }
-    return res.text();
 }

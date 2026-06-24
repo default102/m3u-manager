@@ -23,18 +23,35 @@ export async function POST(request: Request) {
     const channels = parseM3UContent(m3uContent);
 
     // Create Playlist and Channels in database
-    const playlist = await prisma.playlist.create({
-      data: {
-        name: name || 'Untitled Playlist',
-        url: url || null,
-        channels: {
-          create: channels.map((channel, index) => ({
-            ...channel,
-            duration: -1,
-            order: index
-          }))
+    const playlist = await prisma.$transaction(async (tx) => {
+      const newPlaylist = await tx.playlist.create({
+        data: {
+          name: name || 'Untitled Playlist',
+          url: url || null
         }
+      });
+
+      const channelsData = channels.map((channel, index) => ({
+        name: channel.name,
+        url: channel.url,
+        tvgId: channel.tvgId ?? null,
+        tvgName: channel.tvgName ?? null,
+        tvgLogo: channel.tvgLogo ?? null,
+        groupTitle: channel.groupTitle ?? null,
+        duration: -1,
+        order: index,
+        playlistId: newPlaylist.id
+      }));
+
+      const chunkSize = 500;
+      for (let i = 0; i < channelsData.length; i += chunkSize) {
+        const chunk = channelsData.slice(i, i + chunkSize);
+        await tx.channel.createMany({
+          data: chunk
+        });
       }
+
+      return newPlaylist;
     });
 
     return NextResponse.json(playlist);

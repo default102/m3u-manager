@@ -69,3 +69,16 @@ export function getM3UFilename(playlistName: string, isFull: boolean = false): s
     const safeName = playlistName.replace(/[<>:"/\\|?*]/g, '_');
     return `${safeName}_${dateStr}_${versionLabel}.m3u`;
 }
+
+/**
+ * Safe JSON parse to prevent 500 errors
+ */
+export function safeJsonParse<T>(str: string | null | undefined, fallback: T): T {
+    if (!str) return fallback;
+    try {
+        return JSON.parse(str) as T;
+    } catch (e) {
+        console.error('Failed to parse JSON:', str, e);
+        return fallback;
+    }
+}
