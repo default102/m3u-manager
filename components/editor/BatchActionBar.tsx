@@ -8,11 +8,10 @@ interface Props {
   allGroups: string[];
   onMove: (targetGroup: string) => void;
   onAIGroup?: () => void;
-  onAISanitize?: () => void;
   onDelete: () => void;
 }
 
-export function BatchActionBar({ selectedCount, allGroups, onMove, onAIGroup, onAISanitize, onDelete }: Props) {
+export function BatchActionBar({ selectedCount, allGroups, onMove, onAIGroup, onDelete }: Props) {
   const [showMoveMenu, setShowMoveMenu] = useState(false);
 
   return (
@@ -45,15 +44,6 @@ export function BatchActionBar({ selectedCount, allGroups, onMove, onAIGroup, on
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                   智能分组 (AI)
-                </button>
-              )}
-              {onAISanitize && (
-                <button 
-                  onClick={() => { onAISanitize(); setShowMoveMenu(false); }} 
-                  className="w-full text-left px-4 py-3 text-sm font-bold text-indigo-600 hover:bg-indigo-50 border-b border-dashed flex items-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                  智能名称净化 (AI)
                 </button>
               )}
               {allGroups.map(g => (

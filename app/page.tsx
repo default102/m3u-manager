@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trash2, Download, Plus, FileText, Globe, Check, Copy, RefreshCw, Database, X, Upload, Edit3 } from 'lucide-react';
+import { Trash2, Download, Plus, FileText, Globe, Check, Copy, RefreshCw, Database, X, Upload, Edit3, SlidersHorizontal } from 'lucide-react';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { CustomPrefixModal } from '@/components/CustomPrefixModal';
 import { useClipboard } from '@/lib/hooks/useClipboard';
 import { useConfirmModal } from '@/lib/hooks/useConfirmModal';
 import { getExportUrl, formatDate } from '@/lib/utils/helpers';
@@ -17,6 +18,7 @@ export default function Home() {
   const [showRename, setShowRename] = useState<{ id: number, name: string } | null>(null);
   const [openDownloadMenu, setOpenDownloadMenu] = useState<number | null>(null); // 跟踪打开的下载菜单
   const [baseUrl, setBaseUrl] = useState('');
+  const [customPrefixPlaylist, setCustomPrefixPlaylist] = useState<{ id: number, name: string } | null>(null);
 
   // 导入/更新状态
   const [name, setName] = useState('');
@@ -230,13 +232,22 @@ export default function Home() {
                         <code className="text-[11px] md:text-xs text-slate-500 truncate font-mono">
                           {baseUrl}/api/export/{playlist.id}
                         </code>
-                        <button
-                          onClick={() => handleCopy(playlist.id)}
-                          className="ml-2 p-1 text-slate-400 hover:text-blue-600 transition-colors"
-                          title="复制订阅地址"
-                        >
-                          {copiedId === playlist.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
-                        </button>
+                        <div className="flex items-center gap-1.5 ml-2">
+                          <button
+                            onClick={() => handleCopy(playlist.id)}
+                            className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                            title="复制订阅地址"
+                          >
+                            {copiedId === playlist.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                          </button>
+                          <button
+                            onClick={() => setCustomPrefixPlaylist({ id: playlist.id, name: playlist.name })}
+                            className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                            title="自定义前缀复制"
+                          >
+                            <SlidersHorizontal size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -459,6 +470,16 @@ export default function Home() {
           onConfirm={confirmModal.onConfirm}
           onCancel={closeConfirm}
         />
+
+        {customPrefixPlaylist && (
+          <CustomPrefixModal
+            isOpen={true}
+            onClose={() => setCustomPrefixPlaylist(null)}
+            playlistId={customPrefixPlaylist.id}
+            playlistName={customPrefixPlaylist.name}
+            baseUrl={baseUrl}
+          />
+        )}
       </div>
     </div>
   );

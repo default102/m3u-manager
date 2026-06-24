@@ -31,16 +31,6 @@ export async function PATCH(request: Request) {
         })
       );
       await Promise.all(promises);
-    } else if (action === 'updateNames') {
-      // 批量独立更新频道名
-      const updates = data.updates;
-      const promises = updates.map((u: any) =>
-        prisma.channel.update({
-          where: { id: u.id },
-          data: { name: u.name }
-        })
-      );
-      await Promise.all(promises);
     }
 
     return NextResponse.json({ success: true });

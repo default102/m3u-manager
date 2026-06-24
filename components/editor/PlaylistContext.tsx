@@ -23,10 +23,9 @@ interface PlaylistContextType {
   isAddingChannel: boolean;
   isDuplicateModalOpen: boolean;
   isAILoading: boolean;
+  aiProgress: { current: number; total: number } | null;
   aiRecommendations: any[] | null;
   setAiRecommendations: (val: any[] | null) => void;
-  aiSanitizedNames: any[] | null;
-  setAiSanitizedNames: (val: any[] | null) => void;
 
   // Derived State
   allExistingGroupNames: string[];
@@ -68,8 +67,6 @@ interface PlaylistContextType {
   handleBatchMove: (targetGroup: string) => Promise<void>;
   handleRequestAIGroup: () => Promise<void>;
   handleApplyAIGroup: (updates: { id: number, groupTitle: string }[]) => Promise<void>;
-  handleRequestAISanitize: () => Promise<void>;
-  handleApplyAISanitize: (updates: { id: number, name: string }[]) => Promise<void>;
   handleRenameGroup: (oldName: string) => void;
   handleDeleteGroup: (groupName: string) => void;
   handleToggleHideGroup: (groupName: string) => void;
@@ -109,8 +106,8 @@ export function PlaylistProvider({
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const [isAILoading, setIsAILoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState<{ current: number; total: number } | null>(null);
   const [aiRecommendations, setAiRecommendations] = useState<any[] | null>(null);
-  const [aiSanitizedNames, setAiSanitizedNames] = useState<any[] | null>(null);
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -370,25 +367,41 @@ export function PlaylistProvider({
   const handleRequestAIGroup = async () => {
     const idsToProcess = Array.from(selectedIds);
     if (idsToProcess.length === 0) return;
+    
     setIsAILoading(true);
+    setAiProgress({ current: 0, total: idsToProcess.length });
+    
+    const chunkSize = 30;
+    const allResults = [];
+    
     try {
-      const res = await fetch('/api/ai/group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelIds: idsToProcess })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'AI 分组失败');
+      for (let i = 0; i < idsToProcess.length; i += chunkSize) {
+        const chunk = idsToProcess.slice(i, i + chunkSize);
+        const res = await fetch('/api/ai/group', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channelIds: chunk })
+        });
+        
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || `分析第 ${Math.floor(i / chunkSize) + 1} 批频道失败`);
+        }
+        
+        const data = await res.json();
+        if (data.success && data.results) {
+          allResults.push(...data.results);
+        }
+        
+        setAiProgress(prev => prev ? { ...prev, current: Math.min(prev.current + chunk.length, prev.total) } : null);
       }
-      const data = await res.json();
-      if (data.success && data.results) {
-        setAiRecommendations(data.results);
-      }
+      
+      setAiRecommendations(allResults);
     } catch (error: any) {
       alert(`AI 智能分组失败: ${error.message}`);
     } finally {
       setIsAILoading(false);
+      setAiProgress(null);
     }
   };
 
@@ -419,63 +432,6 @@ export function PlaylistProvider({
       router.refresh();
     } catch (error: any) {
       alert(`应用分组失败: ${error.message}`);
-    } finally {
-      setIsAILoading(false);
-    }
-  };
-
-  const handleRequestAISanitize = async () => {
-    const idsToProcess = Array.from(selectedIds);
-    if (idsToProcess.length === 0) return;
-    setIsAILoading(true);
-    try {
-      const res = await fetch('/api/ai/sanitize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelIds: idsToProcess })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'AI 命名清洗失败');
-      }
-      const data = await res.json();
-      if (data.success && data.results) {
-        setAiSanitizedNames(data.results);
-      }
-    } catch (error: any) {
-      alert(`AI 智能命名清洗失败: ${error.message}`);
-    } finally {
-      setIsAILoading(false);
-    }
-  };
-
-  const handleApplyAISanitize = async (updates: { id: number, name: string }[]) => {
-    setIsAILoading(true);
-    try {
-      const res = await fetch('/api/channel/batch', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'updateNames',
-          ids: updates.map(u => u.id),
-          data: { updates }
-        })
-      });
-      if (!res.ok) {
-        throw new Error('更新频道名称失败');
-      }
-      setChannels(prev => prev.map(c => {
-        const matched = updates.find(u => u.id === c.id);
-        if (matched) {
-          return { ...c, name: matched.name };
-        }
-        return c;
-      }));
-      setSelectedIds(new Set());
-      setAiSanitizedNames(null);
-      router.refresh();
-    } catch (error: any) {
-      alert(`应用名称更新失败: ${error.message}`);
     } finally {
       setIsAILoading(false);
     }
@@ -596,10 +552,9 @@ export function PlaylistProvider({
     isAddingChannel,
     isDuplicateModalOpen,
     isAILoading,
+    aiProgress,
     aiRecommendations,
     setAiRecommendations,
-    aiSanitizedNames,
-    setAiSanitizedNames,
 
     allExistingGroupNames,
     allChannelUrls,
@@ -632,8 +587,6 @@ export function PlaylistProvider({
     handleBatchMove,
     handleRequestAIGroup,
     handleApplyAIGroup,
-    handleRequestAISanitize,
-    handleApplyAISanitize,
     handleRenameGroup,
     handleDeleteGroup,
     handleToggleHideGroup,

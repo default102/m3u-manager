@@ -15,6 +15,7 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const isFull = searchParams.get('full') === 'true';
   const isDownload = searchParams.get('download') === 'true'; // 是否触发下载
+  const prefix = searchParams.get('prefix'); // 自定义前缀参数
 
   const playlist = await prisma.playlist.findUnique({
     where: { id: playlistId },
@@ -81,8 +82,27 @@ export async function GET(
     const attrString = attributes.length > 0 ? ' ' + attributes.join(' ') : '';
     const duration = channel.duration ?? -1;
 
+    let channelUrl = channel.url;
+    if (prefix) {
+      const match = channelUrl.match(/^(https?:\/\/)([^\/]+)(.*)$/);
+      if (match) {
+        let newHost = prefix.trim();
+        if (newHost.startsWith('http://') || newHost.startsWith('https://')) {
+          const prefixMatch = newHost.match(/^(https?:\/\/)([^\/]+)$/);
+          if (prefixMatch) {
+            channelUrl = `${prefixMatch[1]}${prefixMatch[2]}${match[3]}`;
+          } else {
+            newHost = newHost.replace(/\/$/, '');
+            channelUrl = newHost + match[3];
+          }
+        } else {
+          channelUrl = `${match[1]}${newHost}${match[3]}`;
+        }
+      }
+    }
+
     m3u += `#EXTINF:${duration}${attrString},${channel.name}\r\n`;
-    m3u += `${channel.url}\r\n`;
+    m3u += `${channelUrl}\r\n`;
   }
 
   // 根据是否下载，设置不同的响应头

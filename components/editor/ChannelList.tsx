@@ -7,7 +7,6 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { SortableChannelItem } from './SortableChannelItem';
 import { BatchActionBar } from './BatchActionBar';
 import { AIGroupConfirmModal } from './AIGroupConfirmModal';
-import { AINameConfirmModal } from './AINameConfirmModal';
 
 export function ChannelList() {
   const {
@@ -24,9 +23,9 @@ export function ChannelList() {
     handleBatchDelete,
     handleBatchMove,
     handleRequestAIGroup,
-    handleRequestAISanitize,
     handleToggleHideChannel,
-    isAILoading
+    isAILoading,
+    aiProgress
   } = usePlaylist();
 
   const sensors = useSensors(
@@ -38,9 +37,20 @@ export function ChannelList() {
     <div className="flex-1 flex flex-col overflow-hidden bg-slate-100 relative">
          {/* AI Loading Mask */}
          {isAILoading && (
-           <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center">
-             <div className="w-10 h-10 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-             <p className="text-sm font-bold text-purple-700">AI 智能分析中，请稍候...</p>
+           <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center p-6 text-black">
+             <div className="w-12 h-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin mb-4"></div>
+             <p className="text-base font-extrabold text-purple-700">AI 智能分析分组中...</p>
+             {aiProgress && (
+               <div className="w-64 mt-4 bg-slate-200 h-5 rounded-full overflow-hidden border border-slate-100 shadow-inner relative">
+                 <div 
+                   className="bg-purple-600 h-full rounded-full transition-all duration-300"
+                   style={{ width: `${Math.round((aiProgress.current / aiProgress.total) * 100)}%` }}
+                 />
+                 <span className="absolute inset-0 text-[10px] font-extrabold text-slate-700 flex items-center justify-center mix-blend-difference">
+                   {aiProgress.current} / {aiProgress.total} ({Math.round((aiProgress.current / aiProgress.total) * 100)}%)
+                 </span>
+               </div>
+             )}
            </div>
          )}
 
@@ -88,14 +98,12 @@ export function ChannelList() {
                 allGroups={orderedGroupNames} 
                 onMove={handleBatchMove} 
                 onAIGroup={handleRequestAIGroup}
-                onAISanitize={handleRequestAISanitize}
                 onDelete={handleBatchDelete} 
              />
          )}
 
          {/* AI Confirmation Modals */}
          <AIGroupConfirmModal />
-         <AINameConfirmModal />
     </div>
   );
 }
