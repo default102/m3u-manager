@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sanitizeChannelNames } from '@/lib/services/ai';
+import { sanitizeChannelNames, AISanitizeResponse } from '@/lib/services/ai';
 import prisma from '@/lib/prisma';
 
 export async function POST(request: Request) {
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     // Call AI sanitize service in chunks of 30 channels
     const chunkSize = 30;
-    const aiResults = [];
+    const aiResults: AISanitizeResponse[] = [];
     for (let i = 0; i < channels.length; i += chunkSize) {
       const chunk = channels.slice(i, i + chunkSize);
       try {
