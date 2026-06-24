@@ -6,6 +6,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { useRouter } from 'next/navigation';
 import { API_ENDPOINTS, DEFAULTS, MESSAGES } from '@/lib/constants';
 import { safeJsonParse } from '@/lib/utils/helpers';
+import { matchLogoAndEPG } from '@/lib/services/epgService';
 
 interface PlaylistContextType {
   // State
@@ -26,6 +27,9 @@ interface PlaylistContextType {
   aiProgress: { current: number; total: number } | null;
   aiRecommendations: any[] | null;
   setAiRecommendations: (val: any[] | null) => void;
+  isEPGMatching: boolean;
+  epgMatchRecommendations: any[] | null;
+  setEpgMatchRecommendations: (val: any[] | null) => void;
 
   // Derived State
   allExistingGroupNames: string[];
@@ -67,6 +71,8 @@ interface PlaylistContextType {
   handleBatchMove: (targetGroup: string) => Promise<void>;
   handleRequestAIGroup: () => Promise<void>;
   handleApplyAIGroup: (updates: { id: number, groupTitle: string }[]) => Promise<void>;
+  handleAutoMatchEPG: () => void;
+  handleApplyEPGMatch: (updates: { id: number; tvgId: string; tvgName: string; tvgLogo: string }[]) => Promise<void>;
   handleRenameGroup: (oldName: string) => void;
   handleDeleteGroup: (groupName: string) => void;
   handleToggleHideGroup: (groupName: string) => void;
@@ -108,6 +114,8 @@ export function PlaylistProvider({
   const [isAILoading, setIsAILoading] = useState(false);
   const [aiProgress, setAiProgress] = useState<{ current: number; total: number } | null>(null);
   const [aiRecommendations, setAiRecommendations] = useState<any[] | null>(null);
+  const [isEPGMatching, setIsEPGMatching] = useState(false);
+  const [epgMatchRecommendations, setEpgMatchRecommendations] = useState<any[] | null>(null);
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -437,6 +445,81 @@ export function PlaylistProvider({
     }
   };
 
+  const handleAutoMatchEPG = () => {
+    // 扫描所选频道，若无选择，则扫描当前分类下的所有频道
+    const targetChannels = selectedIds.size > 0 
+      ? channels.filter(c => selectedIds.has(c.id))
+      : filteredChannels;
+
+    if (targetChannels.length === 0) {
+      alert('没有可匹配的频道');
+      return;
+    }
+
+    setIsEPGMatching(true);
+
+    const matches = targetChannels.map(channel => {
+      const match = matchLogoAndEPG(channel.name);
+      return {
+        id: channel.id,
+        name: channel.name,
+        currentLogo: channel.tvgLogo || '',
+        currentTvgId: channel.tvgId || '',
+        recommendedLogo: match ? match.tvgLogo : '',
+        recommendedTvgId: match ? match.tvgId : '',
+        matched: !!match
+      };
+    });
+
+    const matchedOnly = matches.filter(m => m.matched);
+    if (matchedOnly.length === 0) {
+      alert('未能匹配到任何频道的标准台标和 EPG。已是最新或名称不符合标准字典。');
+      setIsEPGMatching(false);
+      return;
+    }
+
+    setEpgMatchRecommendations(matchedOnly);
+    setIsEPGMatching(false);
+  };
+
+  const handleApplyEPGMatch = async (updates: { id: number; tvgId: string; tvgName: string; tvgLogo: string }[]) => {
+    setIsEPGMatching(true);
+    try {
+      const res = await fetch('/api/channel/batch', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateEPG',
+          ids: updates.map(u => u.id),
+          data: { updates }
+        })
+      });
+
+      if (!res.ok) throw new Error('更新台标和EPG失败');
+
+      setChannels(prev => prev.map(c => {
+        const match = updates.find(u => u.id === c.id);
+        if (match) {
+          return {
+            ...c,
+            tvgId: match.tvgId,
+            tvgName: match.tvgName,
+            tvgLogo: match.tvgLogo
+          };
+        }
+        return c;
+      }));
+
+      setSelectedIds(new Set());
+      setEpgMatchRecommendations(null);
+      router.refresh();
+    } catch (error: any) {
+      alert(`保存失败: ${error.message}`);
+    } finally {
+      setIsEPGMatching(false);
+    }
+  };
+
   const handleDeleteGroup = (groupName: string) => {
     setConfirmModal({
       isOpen: true,
@@ -555,6 +638,9 @@ export function PlaylistProvider({
     aiProgress,
     aiRecommendations,
     setAiRecommendations,
+    isEPGMatching,
+    epgMatchRecommendations,
+    setEpgMatchRecommendations,
 
     allExistingGroupNames,
     allChannelUrls,
@@ -587,6 +673,8 @@ export function PlaylistProvider({
     handleBatchMove,
     handleRequestAIGroup,
     handleApplyAIGroup,
+    handleAutoMatchEPG,
+    handleApplyEPGMatch,
     handleRenameGroup,
     handleDeleteGroup,
     handleToggleHideGroup,

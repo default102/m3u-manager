@@ -52,29 +52,29 @@ export function Modal({
       }}
     >
       <div 
-        className={`bg-white rounded-[2rem] shadow-2xl w-full ${maxWidth} overflow-hidden border border-slate-100 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}
+        className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full ${maxWidth} overflow-hidden border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {header ? header : (title || showCloseButton) && (
-          <div className="px-8 py-6 border-b flex justify-between items-center bg-white shrink-0">
+          <div className="px-8 py-6 border-b dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 shrink-0">
             {title ? (
-              <h3 className="text-xl font-extrabold text-slate-800">{title}</h3>
+              <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-200">{title}</h3>
             ) : <div />}
             {showCloseButton && (
               <button 
                 onClick={onClose} 
-                className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors"
+                className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
               >
                 <X size={20} />
               </button>
             )}
           </div>
         )}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300">
           {children}
         </div>
         {footer && (
-          <div className="shrink-0 border-t bg-slate-50/50">
+          <div className="shrink-0 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
             {footer}
           </div>
         )}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Trash2, Download, Plus, FileText, Globe, Check, Copy, RefreshCw, Database, X, Upload, Edit3, SlidersHorizontal } from 'lucide-react';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { CustomPrefixModal } from '@/components/CustomPrefixModal';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useClipboard } from '@/lib/hooks/useClipboard';
 import { useConfirmModal } from '@/lib/hooks/useConfirmModal';
 import { getExportUrl, formatDate } from '@/lib/utils/helpers';
@@ -184,9 +185,10 @@ export default function Home() {
             <p className="text-slate-500 text-sm mt-1">高效管理、编辑并导出您的直播源列表</p>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/backups"
-              className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm active:scale-95"
+              className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all shadow-sm active:scale-95"
               title="数据备份与恢复"
             >
               <Database size={20} />
@@ -208,11 +210,11 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {playlists.map(playlist => (
-              <div key={playlist.id} className="group bg-white border border-slate-200 p-5 rounded-2xl hover:shadow-md hover:border-blue-200 transition-all duration-300">
+              <div key={playlist.id} className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl hover:shadow-md dark:hover:shadow-slate-950/20 hover:border-blue-200 dark:hover:border-blue-900 transition-all duration-300">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      <Link href={`/editor/${playlist.id}`} className="text-lg font-bold text-slate-800 hover:text-blue-600 transition-colors truncate">
+                      <Link href={`/editor/${playlist.id}`} className="text-lg font-bold text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate">
                         {playlist.name}
                       </Link>
                       <button
@@ -228,8 +230,8 @@ export default function Home() {
                     </div>
 
                     <div className="mt-3 flex items-center gap-2 group/url">
-                      <div className="flex-1 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg flex items-center justify-between min-w-0 max-w-md">
-                        <code className="text-[11px] md:text-xs text-slate-500 truncate font-mono">
+                      <div className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 px-3 py-1.5 rounded-lg flex items-center justify-between min-w-0 max-w-md">
+                        <code className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 truncate font-mono">
                           {baseUrl}/api/export/{playlist.id}
                         </code>
                         <div className="flex items-center gap-1.5 ml-2">
@@ -251,23 +253,23 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-slate-400 mt-2 flex items-center gap-3">
+                    <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-3">
                       <span>创建于 {formatDate(playlist.createdAt)}</span>
                       {playlist.url && <span className="truncate max-w-[200px] hidden sm:inline">来源: {playlist.url}</span>}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-1 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-50">
+                  <div className="flex items-center justify-end gap-1 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-50 dark:border-slate-850">
                     <Link
                       href={`/editor/${playlist.id}`}
-                      className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-100 rounded-xl transition-all active:scale-95"
+                      className="inline-flex items-center justify-center p-2.5 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-all active:scale-95"
                       title="编辑频道"
                     >
                       <FileText size={20} />
                     </Link>
                     <button
                       onClick={() => openUpdateModal(playlist)}
-                      className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 rounded-xl transition-all active:scale-95"
+                      className="inline-flex items-center justify-center p-2.5 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-xl transition-all active:scale-95"
                       title="更新/重新导入"
                     >
                       <RefreshCw size={20} />
@@ -277,7 +279,7 @@ export default function Home() {
                     <div className="relative download-menu-container">
                       <button
                         onClick={() => setOpenDownloadMenu(openDownloadMenu === playlist.id ? null : playlist.id)}
-                        className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all active:scale-95"
+                        className="inline-flex items-center justify-center p-2.5 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-xl transition-all active:scale-95"
                         title="下载 M3U 文件"
                       >
                         <Download size={20} />
@@ -285,35 +287,35 @@ export default function Home() {
 
                       {/* 下拉选项 */}
                       {openDownloadMenu === playlist.id && (
-                        <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50">
+                        <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-50">
                           <a
                             href={`/api/export/${playlist.id}?full=false&download=true`}
-                            className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 transition-colors active:bg-slate-200"
+                            className="block px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors active:bg-slate-200"
                             onClick={() => setOpenDownloadMenu(null)}
                           >
                             <div className="flex items-center gap-2">
                               <Download className="w-3.5 h-3.5" />
                               <span>当前版本</span>
                             </div>
-                            <div className="text-xs text-slate-400 mt-0.5 ml-5">排除隐藏内容</div>
+                            <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 ml-5">排除隐藏内容</div>
                           </a>
                           <a
                             href={`/api/export/${playlist.id}?full=true&download=true`}
-                            className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 transition-colors active:bg-slate-200"
+                            className="block px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 transition-colors active:bg-slate-200"
                             onClick={() => setOpenDownloadMenu(null)}
                           >
                             <div className="flex items-center gap-2">
                               <Download className="w-3.5 h-3.5" />
                               <span>完整版</span>
                             </div>
-                            <div className="text-xs text-slate-400 mt-0.5 ml-5">包含隐藏内容</div>
+                            <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 ml-5">包含隐藏内容</div>
                           </a>
                         </div>
                       )}
                     </div>
                     <button
                       onClick={() => handleDelete(playlist.id)}
-                      className="inline-flex items-center justify-center p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95"
+                      className="inline-flex items-center justify-center p-2.5 text-slate-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all active:scale-95"
                       title="删除列表"
                     >
                       <Trash2 size={20} />
@@ -348,13 +350,13 @@ export default function Home() {
         {/* Import/Update Modal */}
         {showImport && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-              <div className="px-8 py-6 border-b flex justify-between items-center bg-white shrink-0">
-                <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+              <div className="px-8 py-6 border-b dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 shrink-0">
+                <h2 className="text-xl font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   {updatingId ? <RefreshCw className="text-blue-600" size={24} /> : <Plus className="text-blue-600" size={24} />}
                   {updatingId ? '更新/覆盖列表' : '导入新列表'}
                 </h2>
-                <button onClick={() => setShowImport(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+                <button onClick={() => setShowImport(false)} className="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
                   <X size={20} />
                 </button>
               </div>
@@ -362,9 +364,9 @@ export default function Home() {
               <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                 {!updatingId && (
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">列表名称</label>
+                    <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">列表名称</label>
                     <input
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm focus:bg-white"
+                      className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 transition-all shadow-sm focus:bg-white dark:focus:bg-slate-900"
                       value={name}
                       onChange={e => setName(e.target.value)}
                       placeholder="例如：家庭电视"
@@ -383,11 +385,11 @@ export default function Home() {
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">方式一：从 URL 导入</label>
+                    <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">方式一：从 URL 导入</label>
                     <div className="relative">
-                      <Globe size={18} className="absolute left-4 top-4 text-slate-400" />
+                      <Globe size={18} className="absolute left-4 top-4 text-slate-400 dark:text-slate-500" />
                       <input
-                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none transition-all text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white text-slate-700"
+                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none transition-all text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 text-slate-700 dark:text-slate-200"
                         value={url}
                         onChange={e => setUrl(e.target.value)}
                         placeholder="http://example.com/playlist.m3u"
@@ -396,23 +398,23 @@ export default function Home() {
                   </div>
 
                   <div className="relative flex items-center justify-center">
-                    <span className="bg-white px-2 text-xs text-slate-300 font-bold uppercase relative z-10">OR</span>
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+                    <span className="bg-white dark:bg-slate-900 px-2 text-xs text-slate-300 dark:text-slate-600 font-bold uppercase relative z-10">OR</span>
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100 dark:border-slate-800"></div></div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase ml-1">方式二：上传文件</label>
-                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-blue-300 transition-all group">
+                    <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">方式二：上传文件</label>
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-200 dark:border-slate-800 border-dashed rounded-2xl cursor-pointer bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 hover:border-blue-300 dark:hover:border-blue-800 transition-all group">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         {fileName ? (
                           <>
                             <FileText className="w-8 h-8 text-blue-500 mb-2" />
-                            <p className="text-sm text-slate-700 font-medium">{fileName}</p>
+                            <p className="text-sm text-slate-700 dark:text-slate-350 font-medium">{fileName}</p>
                           </>
                         ) : (
                           <>
-                            <Upload className="w-8 h-8 text-slate-300 group-hover:text-blue-500 transition-colors mb-2" />
-                            <p className="text-xs text-slate-400 group-hover:text-blue-500">点击上传 M3U 文件</p>
+                            <Upload className="w-8 h-8 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors mb-2" />
+                            <p className="text-xs text-slate-400 dark:text-slate-500 group-hover:text-blue-500">点击上传 M3U 文件</p>
                           </>
                         )}
                       </div>

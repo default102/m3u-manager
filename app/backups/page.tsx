@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Trash2, Plus, Database, RefreshCw, ArrowLeft, Clock, HardDrive } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface Backup {
   name: string;
@@ -101,25 +102,26 @@ export default function BackupsPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-             <Link href="/" className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                <ArrowLeft size={20} className="text-slate-600" />
+             <Link href="/" className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <ArrowLeft size={20} className="text-slate-600 dark:text-slate-400" />
              </Link>
+             <ThemeToggle />
              <div>
-                <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+                <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <Database className="text-blue-600" /> 数据备份与恢复
                 </h1>
-                <p className="text-slate-500 text-sm mt-1">管理您的数据库备份快照</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">管理您的数据库备份快照</p>
              </div>
           </div>
           
@@ -139,23 +141,23 @@ export default function BackupsPage() {
             <p>正在加载备份列表...</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
              {backups.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">
-                    <Database size={48} className="mx-auto mb-4 text-slate-200" />
+                <div className="text-center py-16 text-slate-400 dark:text-slate-500">
+                    <Database size={48} className="mx-auto mb-4 text-slate-200 dark:text-slate-800" />
                     <p>暂无备份记录</p>
                 </div>
              ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                    {backups.map((backup) => (
-                      <div key={backup.name} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
+                      <div key={backup.name} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                           <div className="flex items-start gap-4">
-                             <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                             <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
                                 <Database size={20} />
                              </div>
                              <div className="min-w-0">
-                                <h3 className="font-bold text-slate-800 break-all">{backup.name}</h3>
-                                <div className="flex flex-wrap gap-4 mt-1 text-xs text-slate-500">
+                                <h3 className="font-bold text-slate-800 dark:text-slate-200 break-all">{backup.name}</h3>
+                                <div className="flex flex-wrap gap-4 mt-1 text-xs text-slate-500 dark:text-slate-400">
                                    <span className="flex items-center gap-1">
                                       <Clock size={14} /> {formatDate(backup.createdAt)}
                                    </span>
@@ -170,7 +172,7 @@ export default function BackupsPage() {
                              <button 
                                 onClick={() => handleRestore(backup.name)}
                                 disabled={processing}
-                                className="px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2"
+                                className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-350 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-blue-800 transition-all flex items-center gap-2"
                              >
                                 <RefreshCw size={16} /> 恢复
                              </button>
@@ -178,7 +180,7 @@ export default function BackupsPage() {
                              <button 
                                 onClick={() => handleDelete(backup.name)}
                                 disabled={processing}
-                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-600 hover:bg-red-950/30 rounded-lg transition-all"
                                 title="删除备份"
                              >
                                 <Trash2 size={18} />

@@ -7,8 +7,13 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { SortableChannelItem } from './SortableChannelItem';
 import { BatchActionBar } from './BatchActionBar';
 import { AIGroupConfirmModal } from './AIGroupConfirmModal';
+import { ChannelPreviewModal } from './ChannelPreviewModal';
+import { EPGMatchConfirmModal } from './EPGMatchConfirmModal';
+import { useState } from 'react';
+import { Channel } from '@/types';
 
 export function ChannelList() {
+  const [previewChannel, setPreviewChannel] = useState<Channel | null>(null);
   const {
     filteredChannels,
     selectedGroup,
@@ -76,6 +81,7 @@ export function ChannelList() {
                           isHidden={hiddenChannels.includes(channel.id)}
                           onToggleSelect={handleToggleSelect}
                           onToggleHide={handleToggleHideChannel}
+                          onPlayPreview={setPreviewChannel}
                           isAllView={selectedGroup === '全部'}
                        />
                     ))}
@@ -104,6 +110,16 @@ export function ChannelList() {
 
          {/* AI Confirmation Modals */}
          <AIGroupConfirmModal />
+
+         {/* EPG Confirmation Modals */}
+         <EPGMatchConfirmModal />
+
+         {/* Playback Preview Modal */}
+         <ChannelPreviewModal 
+            isOpen={previewChannel !== null}
+            onClose={() => setPreviewChannel(null)}
+            channel={previewChannel}
+         />
     </div>
   );
 }
