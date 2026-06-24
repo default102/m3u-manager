@@ -1,12 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Channel, Playlist } from '@/types';
-import { arrayMove } from '@dnd-kit/sortable';
-import { useRouter } from 'next/navigation';
-import { API_ENDPOINTS, DEFAULTS, MESSAGES } from '@/lib/constants';
+import React, { createContext, useContext, useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { Channel, Playlist, AIRecommendationResult } from '@/types';
+import { DEFAULTS } from '@/lib/constants';
 import { safeJsonParse } from '@/lib/utils/helpers';
+import { useChannelActions } from '@/lib/hooks/editor/useChannelActions';
+import { useGroupActions } from '@/lib/hooks/editor/useGroupActions';
+import { useAIActions } from '@/lib/hooks/editor/useAIActions';
 
+// ============================================================
+// Context Type Definition
+// ============================================================
 interface PlaylistContextType {
   // State
   playlistId: number;
@@ -24,8 +28,8 @@ interface PlaylistContextType {
   isDuplicateModalOpen: boolean;
   isAILoading: boolean;
   aiProgress: { current: number; total: number } | null;
-  aiRecommendations: any[] | null;
-  setAiRecommendations: (val: any[] | null) => void;
+  aiRecommendations: AIRecommendationResult[] | null;
+  setAiRecommendations: (val: AIRecommendationResult[] | null) => void;
 
   // Derived State
   allExistingGroupNames: string[];
@@ -40,7 +44,7 @@ interface PlaylistContextType {
     hiddenChannelsCount: number;
   };
 
-  // Actions
+  // Setter Actions
   setGroupSearch: (val: string) => void;
   setChannelSearch: (val: string) => void;
   setSelectedGroup: (val: string) => void;
@@ -50,28 +54,32 @@ interface PlaylistContextType {
   setIsDuplicateModalOpen: (val: boolean) => void;
   setSelectedIds: (ids: Set<number>) => void;
 
-  // Handlers
-  handleCreateGroup: () => void;
-  handleAddChannel: (channel: Omit<Channel, 'id' | 'playlistId' | 'order' | 'createdAt' | 'updatedAt' | 'duration'>) => Promise<void>;
-  handleReorderGroups: (activeId: string, overId: string) => void;
-  handleReorderChannels: (activeId: number, overId: number) => void;
+  // Selection
   handleToggleSelect: (id: number) => void;
   handleSelectAll: () => void;
   handleDeselectAll: () => void;
-  handleToggleHideChannel: (channelId: number) => void;
 
-  // CRUD & Management
+  // Channel CRUD
+  handleAddChannel: (channel: Omit<Channel, 'id' | 'playlistId' | 'order' | 'createdAt' | 'updatedAt' | 'duration'>) => Promise<void>;
   handleUpdateChannel: (updated: Channel) => Promise<void>;
   handleSingleDelete: (id: number) => void;
   handleBatchDelete: () => void;
   handleBatchMove: (targetGroup: string) => Promise<void>;
-  handleRequestAIGroup: () => Promise<void>;
-  handleApplyAIGroup: (updates: { id: number, groupTitle: string }[]) => Promise<void>;
+  handleReorderChannels: (activeId: number, overId: number) => void;
+
+  // Group Management
+  handleCreateGroup: () => void;
+  handleReorderGroups: (activeId: string, overId: string) => void;
   handleRenameGroup: (oldName: string) => void;
   handleDeleteGroup: (groupName: string) => void;
   handleToggleHideGroup: (groupName: string) => void;
+  handleToggleHideChannel: (channelId: number) => void;
 
-  // Confirmation Modal
+  // AI
+  handleRequestAIGroup: () => Promise<void>;
+  handleApplyAIGroup: (updates: { id: number; groupTitle: string }[]) => Promise<void>;
+
+  // Confirmation
   confirmModal: {
     isOpen: boolean;
     title: string;
@@ -84,19 +92,22 @@ interface PlaylistContextType {
 
 const PlaylistContext = createContext<PlaylistContextType | undefined>(undefined);
 
+// ============================================================
+// Provider Component
+// ============================================================
 export function PlaylistProvider({
   children,
-  initialPlaylist
+  initialPlaylist,
 }: {
   children: React.ReactNode;
-  initialPlaylist: Playlist
+  initialPlaylist: Playlist;
 }) {
-  const router = useRouter();
+  // --- Core State ---
   const [channels, setChannels] = useState<Channel[]>(initialPlaylist.channels);
   const [groupOrder, setGroupOrder] = useState<string[]>(safeJsonParse<string[]>(initialPlaylist.groupOrder, []));
   const [hiddenGroups, setHiddenGroups] = useState<string[]>(safeJsonParse<string[]>(initialPlaylist.hiddenGroups, []));
   const [hiddenChannels, setHiddenChannels] = useState<number[]>(safeJsonParse<number[]>(initialPlaylist.hiddenChannels, []));
-  const [selectedGroup, setSelectedGroup] = useState<string>('全部');
+  const [selectedGroup, setSelectedGroup] = useState<string>(DEFAULTS.ALL_GROUPS);
   const [groupSearch, setGroupSearch] = useState('');
   const [channelSearch, setChannelSearch] = useState('');
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
@@ -105,73 +116,112 @@ export function PlaylistProvider({
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  const [isAILoading, setIsAILoading] = useState(false);
-  const [aiProgress, setAiProgress] = useState<{ current: number; total: number } | null>(null);
-  const [aiRecommendations, setAiRecommendations] = useState<any[] | null>(null);
-
+  // --- Confirmation Modal ---
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: '',
     message: '',
-    onConfirm: () => { },
-    isDangerous: false
+    onConfirm: () => {},
+    isDangerous: false,
   });
 
-  const closeConfirmModal = () => setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  const closeConfirmModal = useCallback(() => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
-  // Use a ref to track if initial sync happened
+  const showConfirm = useCallback((config: {
+    title: string;
+    message: string;
+    isDangerous?: boolean;
+    onConfirm: () => void;
+  }) => {
+    setConfirmModal({
+      isOpen: true,
+      title: config.title,
+      message: config.message,
+      isDangerous: config.isDangerous || false,
+      onConfirm: config.onConfirm,
+    });
+  }, []);
+
+  // --- Sync from initialPlaylist ---
   const hasInitialSync = useRef(false);
-
-  // Only sync from initialPlaylist when it changes substantially (like after a re-import)
   useEffect(() => {
     if (hasInitialSync.current) {
-      // If we already have data, only update if the initialPlaylist version is actually different
-      // For simplicity, we sync it, but we also call router.refresh() in actions to keep them in sync
       setChannels(initialPlaylist.channels);
       setGroupOrder(safeJsonParse<string[]>(initialPlaylist.groupOrder, []));
       setHiddenGroups(safeJsonParse<string[]>(initialPlaylist.hiddenGroups, []));
       setHiddenChannels(safeJsonParse<number[]>(initialPlaylist.hiddenChannels, []));
     }
     hasInitialSync.current = true;
-  }, [initialPlaylist.id, initialPlaylist.updatedAt]); // Assuming there is an updatedAt or just ID
+  }, [initialPlaylist.id, initialPlaylist.updatedAt]);
+
+  // --- Composed Hooks ---
+  const channelActions = useChannelActions({
+    playlistId: initialPlaylist.id,
+    channels,
+    selectedIds,
+    setChannels,
+    setEditingChannel,
+    setSelectedIds,
+    closeConfirmModal,
+    showConfirm,
+  });
+
+  const groupActions = useGroupActions({
+    playlistId: initialPlaylist.id,
+    channels,
+    groupOrder,
+    hiddenGroups,
+    hiddenChannels,
+    selectedGroup,
+    setChannels,
+    setGroupOrder,
+    setHiddenGroups,
+    setHiddenChannels,
+    setSelectedGroup,
+    showConfirm,
+    closeConfirmModal,
+  });
+
+  const aiActions = useAIActions({
+    selectedIds,
+    channels,
+    setChannels,
+    setSelectedIds,
+  });
 
   // --- Derived State ---
-
   const allExistingGroupNames = useMemo(() => {
-    const names = new Set(channels.map(c => c.groupTitle || '未分类'));
-    return Array.from(names).filter(n => n !== '未分类').sort();
+    const names = new Set(channels.map(c => c.groupTitle || DEFAULTS.GROUP_NAME));
+    return Array.from(names).filter(n => n !== DEFAULTS.GROUP_NAME).sort();
   }, [channels]);
 
   const allChannelUrls = useMemo(() => {
     return channels.map(c => c.url).filter(Boolean);
   }, [channels]);
 
-
   const allGroupsInOrder = useMemo(() => {
     const seen = new Set<string>();
     const orderInFile: string[] = [];
-
     channels.forEach(c => {
-      const title = c.groupTitle || '未分类';
+      const title = c.groupTitle || DEFAULTS.GROUP_NAME;
       if (!seen.has(title)) {
         seen.add(title);
         orderInFile.push(title);
       }
     });
 
-    let result: string[] = [];
     if (groupOrder.length > 0) {
       const ordered = groupOrder.filter(name => seen.has(name));
       const remaining = orderInFile.filter(name => !ordered.includes(name));
-      result = [...ordered, ...remaining];
-    } else {
-      result = orderInFile;
+      return [...ordered, ...remaining];
     }
-    return result;
+    return orderInFile;
   }, [channels, groupOrder]);
 
   const orderedGroupNames = useMemo(() => {
-    return allGroupsInOrder.filter(n => n !== '未分类');
+    return allGroupsInOrder.filter(n => n !== DEFAULTS.GROUP_NAME);
   }, [allGroupsInOrder]);
 
   const sortableGroups = useMemo(() => {
@@ -183,22 +233,21 @@ export function PlaylistProvider({
   }, [allGroupsInOrder, groupSearch]);
 
   const stats = useMemo(() => {
-    const totalChannels = channels.length;
-    const totalGroups = sortableGroups.length;
-    const hiddenGroupsCount = hiddenGroups.length;
-
-    // Count channels that are EITHER in a hidden group OR individually hidden
     const hiddenChannelsCount = channels.filter(c =>
-      hiddenGroups.includes(c.groupTitle || '未分类') || hiddenChannels.includes(c.id)
+      hiddenGroups.includes(c.groupTitle || DEFAULTS.GROUP_NAME) || hiddenChannels.includes(c.id)
     ).length;
-
-    return { totalChannels, totalGroups, hiddenGroupsCount, hiddenChannelsCount };
+    return {
+      totalChannels: channels.length,
+      totalGroups: sortableGroups.length,
+      hiddenGroupsCount: hiddenGroups.length,
+      hiddenChannelsCount,
+    };
   }, [channels, sortableGroups, hiddenGroups, hiddenChannels]);
 
   const filteredChannels = useMemo(() => {
     let res = [...channels].sort((a, b) => a.order - b.order);
-    if (selectedGroup !== '全部') {
-      res = res.filter(c => (c.groupTitle || '未分类') === selectedGroup);
+    if (selectedGroup !== DEFAULTS.ALL_GROUPS) {
+      res = res.filter(c => (c.groupTitle || DEFAULTS.GROUP_NAME) === selectedGroup);
     }
     if (channelSearch) {
       res = res.filter(c => c.name.toLowerCase().includes(channelSearch.toLowerCase()));
@@ -206,338 +255,23 @@ export function PlaylistProvider({
     return res;
   }, [channels, selectedGroup, channelSearch]);
 
-  // --- Actions ---
-
-  const handleCreateGroup = () => {
-    const name = prompt("输入新分组名称:");
-    if (!name) return;
-
-    fetch(`/api/playlist/${initialPlaylist.id}/channel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: '新频道',
-        url: 'http://',
-        groupTitle: name
-      })
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to create channel');
-        return res.json();
-      })
-      .then(data => {
-        setChannels(prev => {
-          if (prev.some(c => c.id === data.id)) return prev;
-          return [...prev, data];
-        });
-        setSelectedGroup(name);
-        router.refresh();
-      })
-      .catch(err => alert(err.message));
-  };
-
-  const handleAddChannel = async (newChannel: Omit<Channel, 'id' | 'playlistId' | 'order' | 'createdAt' | 'updatedAt' | 'duration'>) => {
-    try {
-      const res = await fetch(`/api/playlist/${initialPlaylist.id}/channel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newChannel)
-      });
-
-      if (!res.ok) throw new Error('Failed to create channel');
-
-      const createdChannel = await res.json();
-
-      setChannels(prev => [...prev, createdChannel]);
-      setIsAddingChannel(false);
-      router.refresh();
-
-      if (createdChannel.groupTitle && createdChannel.groupTitle !== selectedGroup && selectedGroup !== '全部') {
-        // Optionally switch view or just notify
-      }
-    } catch (error) {
-      console.error(error);
-      alert('添加频道失败');
-    }
-  };
-
-  const handleReorderGroups = (activeId: string, overId: string) => {
-    const oldIdx = sortableGroups.indexOf(activeId);
-    const newIdx = sortableGroups.indexOf(overId);
-    if (oldIdx !== -1 && newIdx !== -1) {
-      const newOrder = arrayMove(sortableGroups, oldIdx, newIdx);
-      setGroupOrder(newOrder);
-      fetch(`/api/playlist/${initialPlaylist.id}/group-order`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groupOrder: newOrder })
-      }).then(() => router.refresh());
-    }
-  };
-
-  const handleReorderChannels = (activeId: number, overId: number) => {
-    const oldIndex = channels.findIndex(c => c.id === activeId);
-    const newIndex = channels.findIndex(c => c.id === overId);
-
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const moved = arrayMove(channels, oldIndex, newIndex);
-      // Optimistically update order based on new index to prevent UI snapping back
-      const reordered = moved.map((c, idx) => ({ ...c, order: idx }));
-
-      setChannels(reordered);
-      fetch(`/api/playlist/${initialPlaylist.id}/sort`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channelIds: reordered.map(c => c.id) })
-      }).then(() => router.refresh());
-    }
-  };
-
-  const handleToggleSelect = (id: number) => {
+  // --- Selection Helper ---
+  const handleToggleSelect = useCallback((id: number) => {
     const newSet = new Set(selectedIds);
     if (newSet.has(id)) newSet.delete(id);
     else newSet.add(id);
     setSelectedIds(newSet);
-  };
+  }, [selectedIds]);
 
-  const handleSelectAll = () => setSelectedIds(new Set(filteredChannels.map(c => c.id)));
-  const handleDeselectAll = () => setSelectedIds(new Set());
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredChannels.map(c => c.id)));
+  }, [filteredChannels]);
 
-  const handleUpdateChannel = async (updated: Channel) => {
-    const res = await fetch(`/api/channel/${updated.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated)
-    });
-    if (res.ok) {
-      setChannels(prev => prev.map(c => c.id === updated.id ? updated : c));
-      setEditingChannel(null);
-      router.refresh();
-    }
-  };
+  const handleDeselectAll = useCallback(() => setSelectedIds(new Set()), []);
 
-  const handleSingleDelete = (id: number) => {
-    setConfirmModal({
-      isOpen: true,
-      title: '确认删除频道',
-      message: '您确定要删除这个频道吗？',
-      isDangerous: true,
-      onConfirm: async () => {
-        closeConfirmModal();
-        setChannels(prev => prev.filter(c => c.id !== id));
-        await fetch(`/api/channel/${id}`, { method: 'DELETE' });
-        router.refresh();
-      }
-    });
-  };
-
-  const handleBatchDelete = () => {
-    setConfirmModal({
-      isOpen: true,
-      title: '确认批量删除',
-      message: `您确定要删除选中的 ${selectedIds.size} 个频道吗？此操作不可撤销。`,
-      isDangerous: true,
-      onConfirm: async () => {
-        closeConfirmModal();
-        const idsToDelete = Array.from(selectedIds);
-        setChannels(prev => prev.filter(c => !selectedIds.has(c.id)));
-        setSelectedIds(new Set());
-        await fetch('/api/channel/batch', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', ids: idsToDelete })
-        });
-        router.refresh();
-      }
-    });
-  };
-
-  const handleBatchMove = async (targetGroup: string) => {
-    const idsToMove = Array.from(selectedIds);
-    setChannels(prev => prev.map(c => selectedIds.has(c.id) ? { ...c, groupTitle: targetGroup } : c));
-    setSelectedIds(new Set());
-    await fetch('/api/channel/batch', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'move', ids: idsToMove, data: { groupTitle: targetGroup } })
-    });
-    router.refresh();
-  };
-
-  const handleRequestAIGroup = async () => {
-    const idsToProcess = Array.from(selectedIds);
-    if (idsToProcess.length === 0) return;
-    
-    setIsAILoading(true);
-    setAiProgress({ current: 0, total: idsToProcess.length });
-    
-    const chunkSize = 30;
-    const allResults = [];
-    
-    try {
-      for (let i = 0; i < idsToProcess.length; i += chunkSize) {
-        const chunk = idsToProcess.slice(i, i + chunkSize);
-        const res = await fetch('/api/ai/group', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ channelIds: chunk })
-        });
-        
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || `分析第 ${Math.floor(i / chunkSize) + 1} 批频道失败`);
-        }
-        
-        const data = await res.json();
-        if (data.success && data.results) {
-          allResults.push(...data.results);
-        }
-        
-        setAiProgress(prev => prev ? { ...prev, current: Math.min(prev.current + chunk.length, prev.total) } : null);
-      }
-      
-      setAiRecommendations(allResults);
-    } catch (error: any) {
-      alert(`AI 智能分组失败: ${error.message}`);
-    } finally {
-      setIsAILoading(false);
-      setAiProgress(null);
-    }
-  };
-
-  const handleApplyAIGroup = async (updates: { id: number, groupTitle: string }[]) => {
-    setIsAILoading(true);
-    try {
-      const res = await fetch('/api/channel/batch', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'updateGroups',
-          ids: updates.map(u => u.id),
-          data: { updates }
-        })
-      });
-      if (!res.ok) {
-        throw new Error('更新分组失败');
-      }
-      setChannels(prev => prev.map(c => {
-        const matched = updates.find(u => u.id === c.id);
-        if (matched) {
-          return { ...c, groupTitle: matched.groupTitle === '未分类' ? null : matched.groupTitle };
-        }
-        return c;
-      }));
-      setSelectedIds(new Set());
-      setAiRecommendations(null);
-      router.refresh();
-    } catch (error: any) {
-      alert(`应用分组失败: ${error.message}`);
-    } finally {
-      setIsAILoading(false);
-    }
-  };
-
-  const handleDeleteGroup = (groupName: string) => {
-    setConfirmModal({
-      isOpen: true,
-      title: '确认删除分组',
-      message: `您确定要删除分组 "${groupName}" 吗？该分组下的所有频道将被移动到 "未分类"。`,
-      isDangerous: true,
-      onConfirm: async () => {
-        closeConfirmModal();
-
-        const channelIdsToMove = channels
-          .filter(c => (c.groupTitle || '未分类') === groupName)
-          .map(c => c.id);
-
-        if (channelIdsToMove.length > 0) {
-          setChannels(prev => prev.map(c =>
-            channelIdsToMove.includes(c.id) ? { ...c, groupTitle: '' } : c
-          ));
-
-          await fetch('/api/channel/batch', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'move',
-              ids: channelIdsToMove,
-              data: { groupTitle: '' }
-            })
-          });
-        }
-
-        const newOrder = groupOrder.filter(g => g !== groupName);
-        setGroupOrder(newOrder);
-
-        if (selectedGroup === groupName) {
-          setSelectedGroup('全部');
-        }
-        router.refresh();
-      }
-    });
-  };
-
-  const handleRenameGroup = (oldName: string) => {
-    const newName = prompt(`将分组 "${oldName}" 重命名为:`, oldName);
-    if (!newName || newName === oldName) return;
-
-    const channelIdsToMove = channels
-      .filter(c => (c.groupTitle || '未分类') === oldName)
-      .map(c => c.id);
-
-    if (channelIdsToMove.length > 0) {
-      setChannels(prev => prev.map(c =>
-        channelIdsToMove.includes(c.id) ? { ...c, groupTitle: newName } : c
-      ));
-
-      fetch('/api/channel/batch', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'move',
-          ids: channelIdsToMove,
-          data: { groupTitle: newName }
-        })
-      });
-    }
-
-    const newOrder = groupOrder.map(g => g === oldName ? newName : g);
-    setGroupOrder(newOrder);
-
-    if (selectedGroup === oldName) {
-      setSelectedGroup(newName);
-    }
-    router.refresh();
-  };
-
-  const handleToggleHideGroup = (groupName: string) => {
-    if (groupName === '全部') return;
-    const newHidden = hiddenGroups.includes(groupName)
-      ? hiddenGroups.filter(g => g !== groupName)
-      : [...hiddenGroups, groupName];
-
-    setHiddenGroups(newHidden);
-    fetch(`/api/playlist/${initialPlaylist.id}/hidden-groups`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hiddenGroups: newHidden })
-    }).then(() => router.refresh());
-  };
-
-  const handleToggleHideChannel = (channelId: number) => {
-    const newHidden = hiddenChannels.includes(channelId)
-      ? hiddenChannels.filter(id => id !== channelId)
-      : [...hiddenChannels, channelId];
-
-    setHiddenChannels(newHidden);
-    fetch(`/api/playlist/${initialPlaylist.id}/hidden-channels`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hiddenChannels: newHidden })
-    }).then(() => router.refresh());
-  };
-
-  const value = {
+  // --- Context Value ---
+  const value: PlaylistContextType = {
+    // State
     playlistId: initialPlaylist.id,
     channels,
     groupOrder,
@@ -551,11 +285,9 @@ export function PlaylistProvider({
     isSortingGroups,
     isAddingChannel,
     isDuplicateModalOpen,
-    isAILoading,
-    aiProgress,
-    aiRecommendations,
-    setAiRecommendations,
+    ...aiActions,
 
+    // Derived State
     allExistingGroupNames,
     allChannelUrls,
     orderedGroupNames,
@@ -563,6 +295,7 @@ export function PlaylistProvider({
     filteredChannels,
     stats,
 
+    // Setters
     setGroupSearch,
     setChannelSearch,
     setSelectedGroup,
@@ -572,27 +305,20 @@ export function PlaylistProvider({
     setIsDuplicateModalOpen,
     setSelectedIds,
 
-    handleCreateGroup,
-    handleAddChannel,
-    handleReorderGroups,
-    handleReorderChannels,
+    // Selection
     handleToggleSelect,
     handleSelectAll,
     handleDeselectAll,
-    handleToggleHideChannel,
 
-    handleUpdateChannel,
-    handleSingleDelete,
-    handleBatchDelete,
-    handleBatchMove,
-    handleRequestAIGroup,
-    handleApplyAIGroup,
-    handleRenameGroup,
-    handleDeleteGroup,
-    handleToggleHideGroup,
+    // Channel actions
+    ...channelActions,
 
+    // Group actions
+    ...groupActions,
+
+    // Confirmation
     confirmModal,
-    closeConfirmModal
+    closeConfirmModal,
   };
 
   return <PlaylistContext.Provider value={value}>{children}</PlaylistContext.Provider>;

@@ -38,13 +38,13 @@ function EditorContent() {
     // Actually, let's keep it simple: if mobile, sidebar is full screen.
   }, []);
 
-  if (!mounted) return <div className="h-full flex items-center justify-center text-slate-400">正在加载编辑器...</div>;
+  if (!mounted) return <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500">正在加载编辑器...</div>;
 
   return (
-    <div className="flex h-full text-slate-900 overflow-hidden bg-white relative">
+    <div className="flex h-full text-slate-900 dark:text-slate-100 overflow-hidden bg-white dark:bg-slate-950 relative">
       {showSidebar && <CategorySidebar onSelect={() => setShowSidebar(false)} />}
 
-      <div className={`flex-1 flex flex-col overflow-hidden bg-slate-50/30 ${showSidebar ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col overflow-hidden bg-slate-50/30 dark:bg-slate-950 ${showSidebar ? 'hidden md:flex' : 'flex'}`}>
         <EditorHeader showSidebar={showSidebar} onToggleSidebar={() => setShowSidebar(!showSidebar)} />
         <ChannelList />
       </div>
@@ -90,7 +90,7 @@ function EditorContent() {
 export default function EditorClient({ playlist }: { playlist: Playlist }) {
   return (
     <PlaylistProvider initialPlaylist={playlist}>
-      <div className="h-screen flex flex-col bg-white overflow-hidden">
+      <div className="h-screen flex flex-col bg-white dark:bg-slate-950 overflow-hidden">
         <GlobalHeader playlistName={playlist.name} />
         <main className="flex-1 overflow-hidden relative">
           <EditorContent />

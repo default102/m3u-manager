@@ -96,7 +96,7 @@ export function CategorySidebar({ onSelect }: { onSelect?: () => void }) {
                                     />
                                 ) : (
                                     <button onClick={() => handleGroupClick(g)}
-                                      className={`w-full text-left px-4 py-3 text-sm font-semibold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg dark:shadow-none' : 'text-slate-600 dark:text-slate-355 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
+                                      className={`w-full text-left px-4 py-3 text-sm font-semibold transition-all rounded-xl ${selectedGroup === g ? 'bg-blue-600 text-white shadow-lg dark:shadow-none' : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm'} ${hiddenGroups.includes(g) ? 'opacity-60' : ''}`}>
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-2 min-w-0">
                                             {hiddenGroups.includes(g) && <EyeOff size={12} className="text-slate-400 dark:text-slate-500 shrink-0" />}

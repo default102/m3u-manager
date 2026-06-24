@@ -14,42 +14,46 @@ interface Props {
   onCancel: () => void;
 }
 
-export function ConfirmModal({ 
-  isOpen, 
-  title, 
-  message, 
-  confirmText = '确认', 
-  cancelText = '取消', 
+export function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  confirmText = '确认',
+  cancelText = '取消',
   isDangerous = false,
-  onConfirm, 
-  onCancel 
+  onConfirm,
+  onCancel
 }: Props) {
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onCancel} 
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
       showCloseButton={false}
       maxWidth="max-w-sm"
       zIndex={100000}
     >
       <div className="p-8 text-center">
-        <div className={`mx-auto w-16 h-16 rounded-3xl flex items-center justify-center mb-6 ${isDangerous ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+        <div className={`mx-auto w-16 h-16 rounded-3xl flex items-center justify-center mb-6 ${isDangerous ? 'bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400'}`}>
           <AlertTriangle size={32} />
         </div>
-        <h3 className="text-xl font-black text-slate-800 mb-2">{title}</h3>
-        <p className="text-sm text-slate-500 leading-relaxed mb-8">
+        <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 mb-2">{title}</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
           {message}
         </p>
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={onCancel}
-            className="flex-1 px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all active:scale-95 text-sm"
+            className="flex-1 px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 text-sm"
           >
             {cancelText}
           </button>
-          <button 
+          <button
             onClick={onConfirm}
-            className={`flex-1 px-6 py-3 text-white font-bold rounded-2xl transition-all shadow-lg active:scale-95 text-sm ${isDangerous ? 'bg-red-500 hover:bg-red-600 shadow-red-100' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100'}`}
+            className={`flex-1 px-6 py-3 text-white font-bold rounded-2xl transition-all shadow-lg active:scale-95 text-sm ${
+              isDangerous
+                ? 'bg-red-500 hover:bg-red-600 shadow-red-200 dark:shadow-red-950/30'
+                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200 dark:shadow-blue-950/30'
+            }`}
           >
             {confirmText}
           </button>

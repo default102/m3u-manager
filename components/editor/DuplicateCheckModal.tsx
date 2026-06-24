@@ -21,17 +21,17 @@ export const DuplicateCheckModal = ({ isOpen, onClose }: { isOpen: boolean; onCl
   useEffect(() => {
     if (isOpen) {
       setIsScanning(true);
-      
+
       const nameMap = new Map<string, Channel[]>();
       const urlMap = new Map<string, Channel[]>();
-      
+
       channels.forEach(c => {
         const nameKey = c.name.trim().toLowerCase();
         const urlKey = c.url.trim().toLowerCase();
-        
+
         if (!nameMap.has(nameKey)) nameMap.set(nameKey, []);
         nameMap.get(nameKey)!.push(c);
-        
+
         if (!urlMap.has(urlKey)) urlMap.set(urlKey, []);
         urlMap.get(urlKey)!.push(c);
       });
@@ -56,7 +56,7 @@ export const DuplicateCheckModal = ({ isOpen, onClose }: { isOpen: boolean; onCl
       });
 
       setDuplicateGroups(groups);
-      
+
       const autoSelect = new Set<number>();
       const alreadyKept = new Set<number>();
 
@@ -68,7 +68,7 @@ export const DuplicateCheckModal = ({ isOpen, onClose }: { isOpen: boolean; onCl
           if (idx !== keptIndex) autoSelect.add(c.id);
         });
       });
-      
+
       setSelectedIds(autoSelect);
       setIsScanning(false);
     }
@@ -99,56 +99,53 @@ export const DuplicateCheckModal = ({ isOpen, onClose }: { isOpen: boolean; onCl
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
       maxWidth="max-w-2xl"
       zIndex={100000}
       header={
-        <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white shrink-0">
+        <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
+            <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
               <Copy size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-800">重复频道清理</h3>
-              <p className="text-xs text-slate-500 font-medium">自动识别名称或 URL 相同的频道</p>
+              <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">重复频道清理</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">自动识别名称或 URL 相同的频道</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400">
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500">
             <X size={20} />
           </button>
         </div>
       }
       footer={
-        <div className="p-6 flex items-center justify-between w-full bg-white">
-          <div className="text-sm font-bold text-slate-500">
+        <div className="p-6 flex items-center justify-between w-full bg-white dark:bg-slate-900">
+          <div className="text-sm font-bold text-slate-500 dark:text-slate-400">
             {selectedIds.size > 0 ? (
-              <span className="text-red-500">已选中 {selectedIds.size} 个待删除项</span>
+              <span className="text-red-500 dark:text-red-400">已选中 {selectedIds.size} 个待删除项</span>
             ) : (
               <span>请勾选要清理的重复项</span>
             )}
           </div>
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={onClose}
-              className="px-6 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 font-black rounded-xl transition-all active:scale-95 text-sm"
+              className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-black rounded-xl transition-all active:scale-95 text-sm"
             >
               取消
             </button>
             <button
               onClick={handleDelete}
               disabled={selectedIds.size === 0}
-              className="px-8 py-2.5 text-white font-black rounded-xl transition-all shadow-lg flex items-center gap-2 text-sm active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed"
-              style={{ 
-                backgroundColor: selectedIds.size > 0 ? '#dc2626' : '#cbd5e1',
-                color: 'white',
-                opacity: 1,
-                visibility: 'visible'
+              className="px-8 py-2.5 text-white font-black rounded-xl transition-all shadow-lg flex items-center gap-2 text-sm active:scale-95 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: selectedIds.size > 0 ? '#dc2626' : undefined,
               }}
             >
-              <Trash2 size={16} style={{ color: 'white' }} />
-              <span style={{ color: 'white' }}>确认删除</span>
+              <Trash2 size={16} />
+              <span>确认删除</span>
             </button>
           </div>
         </div>
@@ -158,48 +155,48 @@ export const DuplicateCheckModal = ({ isOpen, onClose }: { isOpen: boolean; onCl
         {isScanning ? (
           <div className="py-20 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-sm text-slate-500 font-bold">正在扫描冗余频道...</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">正在扫描冗余频道...</p>
           </div>
         ) : duplicateGroups.length > 0 ? (
           <div className="space-y-8">
             {duplicateGroups.map((group, gIdx) => (
-              <div key={gIdx} className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-100">
-                <div className="px-4 py-2.5 bg-slate-100 border-b border-slate-100 flex items-center gap-2">
+              <div key={gIdx} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700">
+                <div className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
                   {group.type === 'url' ? <Link size={14} className="text-blue-500"/> : <Tag size={14} className="text-indigo-500"/>}
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     {group.type === 'url' ? '地址重复' : '名称重复'}
                   </span>
-                  <span className="text-xs font-bold text-slate-600 truncate flex-1">{group.value}</span>
-                  <span className="text-[10px] font-black bg-white px-2 py-0.5 rounded-full text-slate-400 border border-slate-200">{group.channels.length} 份</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate flex-1">{group.value}</span>
+                  <span className="text-[10px] font-black bg-white dark:bg-slate-950 px-2 py-0.5 rounded-full text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700">{group.channels.length} 份</span>
                 </div>
-                
-                <div className="divide-y divide-slate-100">
+
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
                   {group.channels.map(channel => (
-                    <div 
+                    <div
                       key={channel.id}
                       onClick={() => toggleSelect(channel.id)}
-                      className={`p-4 flex items-center gap-4 cursor-pointer transition-colors ${selectedIds.has(channel.id) ? 'bg-red-50/50' : 'hover:bg-white'}`}
+                      className={`p-4 flex items-center gap-4 cursor-pointer transition-colors ${selectedIds.has(channel.id) ? 'bg-red-50/50 dark:bg-red-950/20' : 'hover:bg-white dark:hover:bg-slate-850/50'}`}
                     >
                       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                        selectedIds.has(channel.id) 
-                          ? 'bg-red-500 border-red-500 text-white' 
-                          : 'border-slate-200 bg-white'
+                        selectedIds.has(channel.id)
+                          ? 'bg-red-500 border-red-500 text-white'
+                          : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900'
                       }`}>
                         {selectedIds.has(channel.id) && <X size={14} strokeWidth={4} />}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm font-bold text-slate-700 truncate">{channel.name}</span>
-                          <span className="text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded font-medium">{channel.groupTitle || '未分类'}</span>
+                          <span className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{channel.name}</span>
+                          <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-medium">{channel.groupTitle || '未分类'}</span>
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate font-mono">{channel.url}</div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-mono">{channel.url}</div>
                       </div>
 
                       {selectedIds.has(channel.id) ? (
-                        <span className="text-[10px] font-black text-red-500 bg-red-100 px-2 py-1 rounded-lg shrink-0">待删除</span>
+                        <span className="text-[10px] font-black text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-lg shrink-0">待删除</span>
                       ) : (
-                        <span className="text-[10px] font-black text-green-600 bg-green-100 px-2 py-1 rounded-lg shrink-0">将保留</span>
+                        <span className="text-[10px] font-black text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-lg shrink-0">将保留</span>
                       )}
                     </div>
                   ))}
@@ -209,14 +206,14 @@ export const DuplicateCheckModal = ({ isOpen, onClose }: { isOpen: boolean; onCl
           </div>
         ) : (
           <div className="text-center py-20">
-            <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 text-green-500 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 size={32} />
             </div>
-            <h4 className="text-slate-800 font-black text-lg">未发现重复频道</h4>
-            <p className="text-sm text-slate-400 mt-2">您的播放列表非常整洁，没有任何冗余数据。</p>
+            <h4 className="text-slate-800 dark:text-slate-200 font-black text-lg">未发现重复频道</h4>
+            <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">您的播放列表非常整洁，没有任何冗余数据。</p>
           </div>
         )}
       </div>
     </Modal>
   );
-}
+};

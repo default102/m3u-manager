@@ -4,26 +4,19 @@ import Link from 'next/link';
 import { ArrowLeft, Download, Plus, Copy } from 'lucide-react';
 import { usePlaylist } from '@/components/editor/PlaylistContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { useState, useEffect } from 'react';
+import { useClickOutside } from '@/lib/hooks/useClickOutside';
+import { useState } from 'react';
 
 export function GlobalHeader({ playlistName }: { playlistName: string }) {
   const { stats, setIsAddingChannel, setIsDuplicateModalOpen, playlistId } = usePlaylist();
   const [openDownloadMenu, setOpenDownloadMenu] = useState(false);
 
   // 点击外部关闭下载菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (openDownloadMenu) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.download-menu-container')) {
-          setOpenDownloadMenu(false);
-        }
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [openDownloadMenu]);
+  const downloadMenuRef = useClickOutside(
+    () => setOpenDownloadMenu(false),
+    'download-menu-container',
+    openDownloadMenu,
+  );
 
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 z-30 shadow-xl dark:shadow-slate-950/20 shadow-slate-200/50 relative text-slate-850 dark:text-slate-100 transition-colors">
@@ -68,7 +61,7 @@ export function GlobalHeader({ playlistName }: { playlistName: string }) {
         </button>
 
         {/* 下载按钮（下拉菜单） */}
-        <div className="relative download-menu-container">
+        <div className="relative download-menu-container" ref={downloadMenuRef}>
           <button
             onClick={() => setOpenDownloadMenu(!openDownloadMenu)}
             className="flex items-center gap-1.5 bg-slate-900 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-bold hover:bg-slate-800 transition-all active:scale-95 shrink-0 shadow-md whitespace-nowrap"

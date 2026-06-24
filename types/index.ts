@@ -100,3 +100,11 @@ export interface Backup {
 export interface BackupResponse {
   name: string;
 }
+
+// AI Recommendation Types
+export interface AIRecommendationResult {
+  channelId: number;
+  name: string;
+  originalGroupTitle: string;
+  recommendedGroupTitle: string;
+}

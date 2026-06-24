@@ -34,19 +34,19 @@ export function ChannelList() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-slate-100 relative">
+    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
          {/* AI Loading Mask */}
          {isAILoading && (
-           <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center p-6 text-black">
+           <div className="absolute inset-0 bg-white/60 dark:bg-slate-950/70 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center p-6">
              <div className="w-12 h-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-             <p className="text-base font-extrabold text-purple-700">AI 智能分析分组中...</p>
+             <p className="text-base font-extrabold text-purple-700 dark:text-purple-400">AI 智能分析分组中...</p>
              {aiProgress && (
-               <div className="w-64 mt-4 bg-slate-200 h-5 rounded-full overflow-hidden border border-slate-100 shadow-inner relative">
+               <div className="w-64 mt-4 bg-slate-200 dark:bg-slate-700 h-5 rounded-full overflow-hidden border border-slate-100 dark:border-slate-600 shadow-inner relative">
                  <div 
                    className="bg-purple-600 h-full rounded-full transition-all duration-300"
                    style={{ width: `${Math.round((aiProgress.current / aiProgress.total) * 100)}%` }}
                  />
-                 <span className="absolute inset-0 text-[10px] font-extrabold text-slate-700 flex items-center justify-center mix-blend-difference">
+                 <span className="absolute inset-0 text-[10px] font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center mix-blend-difference">
                    {aiProgress.current} / {aiProgress.total} ({Math.round((aiProgress.current / aiProgress.total) * 100)}%)
                  </span>
                </div>
@@ -84,7 +84,7 @@ export function ChannelList() {
               </DndContext>
               
               {filteredChannels.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-24 text-slate-300">
+                <div className="flex flex-col items-center justify-center py-24 text-slate-300 dark:text-slate-600">
                     <Search size={48} strokeWidth={1} className="mb-4 opacity-20" />
                     <p className="text-sm font-medium">此分类下暂无频道</p>
                 </div>

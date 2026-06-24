@@ -39,7 +39,7 @@ export function SortableChannelItem({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={`bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800/30 ${selected ? 'ring-2 ring-blue-500 bg-blue-50/10' : 'hover:bg-slate-50 dark:hover:bg-slate-850'} p-3 md:p-4 rounded-xl flex items-center gap-3 md:gap-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative text-slate-900 dark:text-slate-100`}>
+    <div ref={setNodeRef} style={style} className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/30 ${selected ? 'ring-2 ring-blue-500 bg-blue-50/50 dark:bg-blue-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'} p-3 md:p-4 rounded-xl flex items-center gap-3 md:gap-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group relative text-slate-900 dark:text-slate-100`}>
       <div 
         {...attributes} 
         {...listeners} 
@@ -74,15 +74,15 @@ export function SortableChannelItem({
       <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all px-2">
          <button 
            onClick={() => onToggleHide(channel.id)} 
-           className={`inline-flex items-center justify-center p-2 rounded-lg transition-all active:scale-90 ${isHidden ? 'text-blue-600 bg-blue-100' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-100'}`}
+           className={`inline-flex items-center justify-center p-2 rounded-lg transition-all active:scale-90 ${isHidden ? 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30' : 'text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/20'}`}
            title={isHidden ? "取消隐藏" : "隐藏频道"}
          >
             {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
          </button>
-         <button onClick={() => onEdit(channel)} className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all active:scale-90" title="编辑频道">
+         <button onClick={() => onEdit(channel)} className="inline-flex items-center justify-center p-2 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 rounded-lg transition-all active:scale-90" title="编辑频道">
             <Edit2 size={16} />
          </button>
-         <button onClick={() => onDelete(channel.id)} className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-red-500 hover:bg-red-100 rounded-lg transition-all active:scale-90" title="删除频道">
+         <button onClick={() => onDelete(channel.id)} className="inline-flex items-center justify-center p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-all active:scale-90" title="删除频道">
             <Trash2 size={16} />
          </button>
       </div>
